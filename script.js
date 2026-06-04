@@ -5,7 +5,7 @@ const STORAGE_KEY="primo_league_state_v31";
 const MONTHS=["JANEIRO","FEVEREIRO","MARÇO","ABRIL","MAIO","JUNHO","JULHO","AGOSTO","SETEMBRO","OUTUBRO","NOVEMBRO","DEZEMBRO"];
 const slotData=[{name:"Segunda 19:30",vagas:8},{name:"Terça 11:30",vagas:6},{name:"Terça 18:30",vagas:6},{name:"Terça 19:30",vagas:8},{name:"Quarta 19:30",vagas:8},{name:"Quinta 11:30",vagas:6},{name:"Quinta 18:30",vagas:6},{name:"Quinta 19:30",vagas:8}];
 const slots=slotData.map(s=>s.name);
-let state=loadLocal(), currentWeek=1, supa=null, saveTimer=null;
+let state=loadLocal(), currentWeek=1, supa=null, saveTimer=null; let photoUploadInProgress=false;
 function defaultState(){return {athletes:[],months:{},currentMonth:"MAIO",schemaVersion:31}}
 function loadLocal(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||defaultState()}catch(e){return defaultState()}}
 function n(v){const x=Number(v);return Number.isFinite(x)?x:0}
@@ -34,20 +34,90 @@ function saveLocal(){norm();localStorage.setItem(STORAGE_KEY,JSON.stringify(stat
 function scheduleSave(){saveLocal();clearTimeout(saveTimer);saveTimer=setTimeout(saveCloud,600)}
 function setSync(msg,type="warn"){const el=document.getElementById("syncStatus");if(el){el.textContent=msg;el.style.color=type==="ok"?"#8ff0b3":type==="error"?"#ff8b8b":"#ffe082"}}
 async function initCloud(){try{supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);await loadCloud()}catch(e){setSync("Erro Supabase: "+e.message,"error")}}
-async function loadCloud(){try{const {data,error}=await supa.from("primo_app_state").select("data").eq("app_id",APP_ID).maybeSingle();if(error)throw error;if(data?.data){state=data.data;norm();saveLocal();setSync("Dados online carregados.","ok")}else await saveCloud();renderAll()}catch(e){setSync("Erro ao carregar online. Execute o SQL.","error");console.error(e)}}
+async function loadCloud(){try{ if(photoUploadInProgress)return;const {data,error}=await supa.from("primo_app_state").select("data").eq("app_id",APP_ID).maybeSingle();if(error)throw error;if(data?.data){state=data.data;norm();saveLocal();setSync("Dados online carregados.","ok")}else await saveCloud();renderAll()}catch(e){setSync("Erro ao carregar online. Execute o SQL.","error");console.error(e)}}
 async function saveCloud(){if(!supa)return;try{norm();const {error}=await supa.from("primo_app_state").upsert({app_id:APP_ID,data:state,updated_at:new Date().toISOString()},{onConflict:"app_id"});if(error)throw error;setSync("Dados salvos online.","ok"); if(!document.activeElement || !["INPUT","SELECT","TEXTAREA"].includes(document.activeElement.tagName)) renderAll()}catch(e){setSync("Erro ao salvar online.","error");console.error(e)}}
 function cap(p){return {dashboard:"Dashboard",cadastro:"Cadastro",atletas:"Atletas",agenda:"Agenda",treinos:"Treinos",ranking:"Ranking",knockout:"Knockout",year:"Year",print:"Print",config:"Config"}[p]}
 function setPage(p){if(document.body.classList.contains("student-mode")&&!["ranking","knockout","year"].includes(p))p="ranking";["dashboard","cadastro","atletas","agenda","treinos","ranking","knockout","year","print","config"].forEach(x=>{document.getElementById("page"+cap(x))?.classList.toggle("hidden",x!==p);document.getElementById("tab"+cap(x))?.classList.toggle("active",x===p)});renderAll()}
 function renderAll(){norm();renderMonths();renderSlotSelects();renderWeeks();renderDashboard();renderCadastro();renderBankSelect();renderMonthAthletes();renderScore();renderAgenda();renderRanking();renderYear();renderKnockout();document.querySelectorAll(".current-month-label").forEach(e=>e.textContent=month())}
 function renderMonths(){const sel=document.getElementById("monthName");if(sel&&!sel.dataset.ready){sel.innerHTML=MONTHS.map(m=>`<option ${m===state.currentMonth?"selected":""}>${m}</option>`).join("");sel.dataset.ready=1}if(sel){sel.value=state.currentMonth||"MAIO";sel.onchange=()=>{state.currentMonth=sel.value;document.getElementById("heroMonth").textContent=sel.value;norm();scheduleSave();renderAll()}}document.getElementById("heroMonth").textContent=month()}
-function renderSlotSelects(){["sessionSlot","slot1Select"].forEach(id=>{const el=document.getElementById(id);if(el&&!el.dataset.ready){el.innerHTML=slots.map(s=>`<option>${s}</option>`).join("");el.dataset.ready=1}});const s2=document.getElementById("slot2Select");if(s2&&!s2.dataset.ready){s2.innerHTML='<option value="">Sem segundo treino</option>'+slots.map(s=>`<option>${s}</option>`).join("");s2.dataset.ready=1}}
+function renderSlotSelects(){
+  const keep1=document.getElementById("slot1Select")?.value || "";
+  const keep2=document.getElementById("slot2Select")?.value || "";
+  const keepSession=document.getElementById("sessionSlot")?.value || "";
+
+  ["sessionSlot","slot1Select"].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    const current = id==="sessionSlot" ? keepSession : keep1;
+    el.innerHTML=slots.map(s=>`<option value="${s}">${s}</option>`).join("");
+    if(current && [...el.options].some(o=>o.value===current)) el.value=current;
+  });
+
+  const s2=document.getElementById("slot2Select");
+  if(s2){
+    s2.innerHTML='<option value="">Sem segundo treino</option>'+slots.map(s=>`<option value="${s}">${s}</option>`).join("");
+    if(keep2 && [...s2.options].some(o=>o.value===keep2)) s2.value=keep2;
+  }
+}
 function renderWeeks(){const el=document.getElementById("weekTabs");if(el)el.innerHTML=[0,1,2,3,4].map(i=>`<button class="${i===currentWeek?"active":""}" onclick="currentWeek=${i};renderAll()">SEMANA ${i+1}</button>`).join("")}
 function photoHtml(a){return `<label class="photo-label">${a.photo?`<img src="${a.photo}" class="avatar">`:`<span class="avatar-placeholder">${initials(a.name)}</span>`}<input class="photo-input" type="file" accept="image/*" onchange="loadPhoto(event,'${idOf(a)}')"></label>`}
-function loadPhoto(e,id){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const a=state.athletes.find(x=>idOf(x)===id);if(a){a.photo=r.result;scheduleSave();renderAll()}};r.readAsDataURL(f)}
+function loadPhoto(e,id){ photoUploadInProgress=true;
+  const f=e.target.files && e.target.files[0];
+  if(!f)return;
+
+  const reader=new FileReader();
+  reader.onload=()=>{
+    const img=new Image();
+    img.onload=()=>{
+      const maxSize=420;
+      let w=img.width, h=img.height;
+      if(w>h && w>maxSize){ h=Math.round(h*maxSize/w); w=maxSize; }
+      else if(h>=w && h>maxSize){ w=Math.round(w*maxSize/h); h=maxSize; }
+
+      const canvas=document.createElement("canvas");
+      canvas.width=w;
+      canvas.height=h;
+      const ctx=canvas.getContext("2d");
+      ctx.drawImage(img,0,0,w,h);
+
+      const compressed=canvas.toDataURL("image/jpeg",0.82);
+      const a=state.athletes.find(x=>idOf(x)===String(id));
+
+      if(a){
+        a.photo=compressed;
+        saveLocal();
+
+        clearTimeout(saveTimer);
+        saveTimer=setTimeout(async()=>{
+          await saveCloud();
+          renderAll();
+        },500);
+
+        renderAll();
+        photoUploadInProgress=false; setSync("Foto do atleta salva.", "ok");
+      }
+    };
+    img.src=reader.result;
+  };
+  reader.readAsDataURL(f);
+}
+
 function createAthlete(){const name=document.getElementById("athleteNameInput").value.trim();const age=document.getElementById("athleteAgeInput").value.trim();if(!name)return alert("Digite o nome do atleta.");const a={id:uid(),identityId:"",name,age,photo:"",active:true,createdAt:new Date().toISOString()};a.identityId=a.id;state.athletes.push(a);document.getElementById("athleteNameInput").value="";document.getElementById("athleteAgeInput").value="";scheduleSave();renderAll();alert("Atleta cadastrado!")}
 function renderCadastro(){const body=document.getElementById("athleteBankBody");if(!body)return;body.innerHTML=state.athletes.filter(a=>a.active!==false).map((a,i)=>`<tr><td>${i+1}</td><td>${photoHtml(a)}</td><td><input value="${esc(a.name)}" oninput="editAthlete('${idOf(a)}','name',this.value)"></td><td><input value="${esc(a.age||'')}" oninput="editAthlete('${idOf(a)}','age',this.value)"></td><td><span class="id-badge">${idOf(a)}</span></td><td><strong>${yearTotal(a)}</strong></td><td><div class="actions"><button class="success" onclick="quickAdd('${idOf(a)}')">Selecionar</button><button class="stats-btn" onclick="openStats('${idOf(a)}')">Stats</button><button class="delete-btn" onclick="deleteAthleteFull('${idOf(a)}')">Excluir</button></div></td></tr>`).join("")||'<tr><td colspan="7">Nenhum atleta cadastrado.</td></tr>'}
 function editAthlete(id,field,value){const a=state.athletes.find(x=>idOf(x)===id);if(a){a[field]=value;scheduleSave();renderBankSelect()}}
-function renderBankSelect(){const sel=document.getElementById("bankSelect");if(!sel)return;const active=new Set(activeAthletes().map(a=>idOf(a)));sel.innerHTML=state.athletes.filter(a=>a.active!==false).map(a=>`<option value="${idOf(a)}">${esc(a.name)}${active.has(idOf(a))?" — ativo":""}</option>`).join("")||'<option value="">Cadastre atletas</option>'}
+function renderBankSelect(){
+  const sel=document.getElementById("bankSelect");
+  if(!sel)return;
+  const previous=sel.value;
+  const active=new Set(activeAthletes().map(a=>idOf(a)));
+  sel.innerHTML=state.athletes
+    .filter(a=>a.active!==false)
+    .map(a=>`<option value="${idOf(a)}">${esc(a.name)}${active.has(idOf(a))?" — ativo":""}</option>`)
+    .join("")||'<option value="">Cadastre atletas</option>';
+  if(previous && [...sel.options].some(o=>o.value===previous)){
+    sel.value=previous;
+  }
+}
 function addAthleteToMonth(){const id=document.getElementById("bankSelect").value;if(!id)return alert("Selecione um atleta.");const s1=document.getElementById("slot1Select").value;const s2=document.getElementById("slot2Select").value;const p=participant(id);p.slots=[s1,s2].filter(Boolean);if(!Array.isArray(p.weeks))p.weeks=Array.from({length:5},()=>({}));scheduleSave();renderAll();alert("Atleta adicionado ao mês.")}
 function quickAdd(id){const p=participant(id);if(!p.slots.length)p.slots=[slots[0]];scheduleSave();setPage("atletas")}
 function renderMonthAthletes(){const body=document.getElementById("monthAthletesBody");if(!body)return;const list=activeAthletes();body.innerHTML=list.map((a,i)=>`<tr><td>${i+1}</td><td>${photoHtml(a)}</td><td><strong>${esc(a.name)}</strong><br><span class="id-badge">${idOf(a)}</span></td><td><select onchange="editSlot('${idOf(a)}',0,this.value)"><option value="">Fora do mês</option>${slots.map(s=>`<option value="${s}" ${slotsOf(a)[0]===s?"selected":""}>${s}</option>`).join("")}</select></td><td><select onchange="editSlot('${idOf(a)}',1,this.value)"><option value="">Sem segundo treino</option>${slots.map(s=>`<option value="${s}" ${slotsOf(a)[1]===s?"selected":""}>${s}</option>`).join("")}</select></td><td><strong>${monthTotal(a)}</strong></td><td><div class="actions"><button class="stats-btn" onclick="openStats('${idOf(a)}')">Stats</button><button class="danger" onclick="removeFromMonth('${idOf(a)}')">Remover</button></div></td></tr>`).join("")||`<tr><td colspan="7">Nenhum atleta ativo em ${month()}.</td></tr>`}
@@ -112,8 +182,14 @@ function setupStudent(){if(new URLSearchParams(location.search).get("aluno")==="
 renderAll();setupStudent();initCloud();
 
 
+
+function shouldSkipAutoRender(){
+  const el=document.activeElement;
+  return el && ["INPUT","SELECT","TEXTAREA"].includes(el.tagName);
+}
+
 function refreshFromState(){
-  try{ renderAll(); }catch(e){ console.error(e); }
+  if(shouldSkipAutoRender())return; try{ renderAll(); }catch(e){ console.error(e); }
 }
 document.addEventListener("visibilitychange",()=>{
   if(!document.hidden){ refreshFromState(); if(supa) loadCloud(); }
