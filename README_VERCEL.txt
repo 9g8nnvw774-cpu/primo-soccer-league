@@ -59,3 +59,9 @@ v4.1:
 - Corrigido bug do mês voltando para Janeiro.
 - O mês selecionado fica salvo corretamente.
 - O seletor não reseta ao renderizar a tela.
+
+
+v4.2:
+- Correção definitiva do mês voltando para Janeiro.
+- Mês selecionado é salvo em chave separada no celular.
+- O mês local tem prioridade sobre o mês vindo do Supabase.

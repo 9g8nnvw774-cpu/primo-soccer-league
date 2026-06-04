@@ -2,6 +2,7 @@ const SUPABASE_URL="https://edsryflpvspwtcaahvhy.supabase.co";
 const SUPABASE_KEY="sb_publishable_gtql54XF2okza9t0uZH6Yg_28oX6YNz";
 const APP_ID="primo_soccer_league_2026";
 const STORAGE_KEY="primo_league_state_v31";
+const SELECTED_MONTH_KEY="primo_league_selected_month_v1";
 const MONTHS=["JANEIRO","FEVEREIRO","MARÇO","ABRIL","MAIO","JUNHO","JULHO","AGOSTO","SETEMBRO","OUTUBRO","NOVEMBRO","DEZEMBRO"];
 const slotData=[{name:"Segunda 19:30",vagas:8},{name:"Terça 11:30",vagas:6},{name:"Terça 18:30",vagas:6},{name:"Terça 19:30",vagas:8},{name:"Quarta 19:30",vagas:8},{name:"Quinta 11:30",vagas:6},{name:"Quinta 18:30",vagas:6},{name:"Quinta 19:30",vagas:8}];
 const slots=slotData.map(s=>s.name);
@@ -12,8 +13,8 @@ function n(v){const x=Number(v);return Number.isFinite(x)?x:0}
 function esc(t){return String(t??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
 function initials(name){return String(name||"A").trim().split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase()||"A"}
 function uid(){return "ATL-"+Date.now().toString(36).toUpperCase()+"-"+Math.random().toString(36).slice(2,6).toUpperCase()}
-function month(){const el=document.getElementById("monthName");return state.currentMonth || (el&&el.value) || "MAIO"}
-function norm(){if(!state||typeof state!=="object")state=defaultState();if(!Array.isArray(state.athletes))state.athletes=[];if(!state.months)state.months={};if(!state.currentMonth)state.currentMonth="MAIO";state.schemaVersion=31;state.athletes.forEach(a=>{if(!a.id)a.id=uid();if(!a.identityId)a.identityId=a.id;if(a.active===undefined)a.active=true});if(!state.months[month()])state.months[month()]={participants:{}}}
+function month(){return localStorage.getItem(SELECTED_MONTH_KEY)||state.currentMonth||"MAIO"}
+function norm(){if(!state||typeof state!=="object")state=defaultState();if(!Array.isArray(state.athletes))state.athletes=[];if(!state.months)state.months={};const savedMonth=localStorage.getItem(SELECTED_MONTH_KEY);if(savedMonth&&MONTHS.includes(savedMonth))state.currentMonth=savedMonth;if(!state.currentMonth)state.currentMonth="MAIO";state.schemaVersion=31;state.athletes.forEach(a=>{if(!a.id)a.id=uid();if(!a.identityId)a.identityId=a.id;if(a.active===undefined)a.active=true});if(!state.months[month()])state.months[month()]={participants:{}}}
 function monthObj(m=state.currentMonth||month()){norm();if(!state.months[m])state.months[m]={participants:{}};return state.months[m]}
 function idOf(a){return String(a.identityId||a.id)}
 function participant(aOrId,m=month(),create=true){const id=typeof aOrId==="object"?idOf(aOrId):String(aOrId);const mo=monthObj(m);if(!mo.participants[id]&&create)mo.participants[id]={athleteId:id,slots:[],weeks:Array.from({length:5},()=>({}))};return mo.participants[id]||null}
@@ -30,33 +31,38 @@ function yearTotal(a){const id=idOf(a);return Object.keys(state.months||{}).redu
 function activeAthletes(m=month()){const ids=new Set(Object.entries(monthObj(m).participants||{}).filter(([id,p])=>p?.slots?.length).map(([id])=>id));return state.athletes.filter(a=>a.active!==false&&ids.has(idOf(a)))}
 function ranked(){return activeAthletes().map(a=>({...a,total:monthTotal(a),weekTotals:[0,1,2,3,4].map(i=>weekTotal(a,i))})).sort((a,b)=>b.total-a.total||a.name.localeCompare(b.name))}
 function rankedYear(){return state.athletes.filter(a=>a.active!==false).map(a=>({...a,year:yearTotal(a),current:monthTotal(a)})).sort((a,b)=>b.year-a.year||a.name.localeCompare(b.name))}
-function saveLocal(){norm();localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
+function saveLocal(){norm();if(state.currentMonth)localStorage.setItem(SELECTED_MONTH_KEY,state.currentMonth);localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
 function scheduleSave(){saveLocal();clearTimeout(saveTimer);saveTimer=setTimeout(saveCloud,600)}
 function setSync(msg,type="warn"){const el=document.getElementById("syncStatus");if(el){el.textContent=msg;el.style.color=type==="ok"?"#8ff0b3":type==="error"?"#ff8b8b":"#ffe082"}}
 async function initCloud(){try{supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);await loadCloud()}catch(e){setSync("Erro Supabase: "+e.message,"error")}}
-async function loadCloud(){try{ if(photoUploadInProgress)return;const {data,error}=await supa.from("primo_app_state").select("data").eq("app_id",APP_ID).maybeSingle();if(error)throw error;if(data?.data){state=data.data;norm();saveLocal();setSync("Dados online carregados.","ok")}else await saveCloud();renderAll()}catch(e){setSync("Erro ao carregar online. Execute o SQL.","error");console.error(e)}}
+async function loadCloud(){try{ if(photoUploadInProgress)return;const {data,error}=await supa.from("primo_app_state").select("data").eq("app_id",APP_ID).maybeSingle();if(error)throw error;if(data?.data){const chosen=localStorage.getItem(SELECTED_MONTH_KEY)||state.currentMonth;state=data.data;if(chosen&&MONTHS.includes(chosen)){state.currentMonth=chosen;localStorage.setItem(SELECTED_MONTH_KEY,chosen)}norm();saveLocal();setSync("Dados online carregados.","ok")}else await saveCloud();renderAll()}catch(e){setSync("Erro ao carregar online. Execute o SQL.","error");console.error(e)}}
 async function saveCloud(){if(!supa)return;try{norm();const {error}=await supa.from("primo_app_state").upsert({app_id:APP_ID,data:state,updated_at:new Date().toISOString()},{onConflict:"app_id"});if(error)throw error;setSync("Dados salvos online.","ok"); if(!document.activeElement || !["INPUT","SELECT","TEXTAREA"].includes(document.activeElement.tagName)) renderAll()}catch(e){setSync("Erro ao salvar online.","error");console.error(e)}}
 function cap(p){return {dashboard:"Dashboard",cadastro:"Cadastro",atletas:"Atletas",agenda:"Agenda",treinos:"Treinos",ranking:"Ranking",knockout:"Knockout",year:"Year",print:"Print",config:"Config"}[p]}
 function setPage(p){if(document.body.classList.contains("student-mode")&&!["ranking","knockout","year"].includes(p))p="ranking";["dashboard","cadastro","atletas","agenda","treinos","ranking","knockout","year","print","config"].forEach(x=>{document.getElementById("page"+cap(x))?.classList.toggle("hidden",x!==p);document.getElementById("tab"+cap(x))?.classList.toggle("active",x===p)});renderAll()}
 function renderAll(){norm();renderMonths();renderSlotSelects();renderWeeks();renderDashboard();renderCadastro();renderBankSelect();renderCopyMonthSelect();renderMonthAthletes();renderScore();renderAgenda();renderRanking();renderYear();renderKnockout();document.querySelectorAll(".current-month-label").forEach(e=>e.textContent=month())}
 function renderMonths(){
   const sel=document.getElementById("monthName");
-  if(!state.currentMonth) state.currentMonth="MAIO";
+  const saved=localStorage.getItem(SELECTED_MONTH_KEY);
+  if(saved && MONTHS.includes(saved)) state.currentMonth=saved;
+  if(!state.currentMonth || !MONTHS.includes(state.currentMonth)) state.currentMonth="MAIO";
+
   if(sel && !sel.dataset.ready){
     sel.innerHTML=MONTHS.map(m=>`<option value="${m}">${m}</option>`).join("");
     sel.dataset.ready="1";
     sel.onchange=()=>{
-      state.currentMonth=sel.value;
+      const chosen=sel.value;
+      state.currentMonth=chosen;
+      localStorage.setItem(SELECTED_MONTH_KEY, chosen);
       const hero=document.getElementById("heroMonth");
-      if(hero) hero.textContent=state.currentMonth;
+      if(hero) hero.textContent=chosen;
       norm();
       scheduleSave();
       renderAll();
     };
   }
-  if(sel && sel.value!==state.currentMonth){
-    sel.value=state.currentMonth;
-  }
+
+  if(sel) sel.value=state.currentMonth;
+
   const hero=document.getElementById("heroMonth");
   if(hero) hero.textContent=state.currentMonth;
 }
@@ -494,3 +500,15 @@ document.addEventListener("visibilitychange",()=>{
 });
 window.addEventListener("focus",()=>{ if(!document.activeElement || !["INPUT","SELECT","TEXTAREA"].includes(document.activeElement.tagName)) refreshFromState(); });
 setInterval(()=>{ if(!document.activeElement || !["INPUT","SELECT","TEXTAREA"].includes(document.activeElement.tagName)) refreshFromState(); },2500);
+
+function forceSetMonth(m){
+  if(!MONTHS.includes(m))return;
+  state.currentMonth=m;
+  localStorage.setItem(SELECTED_MONTH_KEY,m);
+  const sel=document.getElementById("monthName");
+  if(sel)sel.value=m;
+  const hero=document.getElementById("heroMonth");
+  if(hero)hero.textContent=m;
+  scheduleSave();
+  renderAll();
+}
