@@ -278,7 +278,8 @@ function renderMatch(title,a,b,weekIndex){
 }
 
 function renderKnockout(){
-  renderKnockoutSelectors();
+  if(!document.body.classList.contains("student-mode")) renderKnockoutSelectors();
+  if(document.body.classList.contains("student-mode")){const s=document.getElementById("knockoutSelectors"); if(s) s.innerHTML="";}
   const el=document.getElementById("knockoutContent");
   if(!el)return;
 

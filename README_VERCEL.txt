@@ -33,3 +33,9 @@ v3.7:
 - Seleção dos 8 classificados.
 - Botão para classificar pelos 8 melhores até a Semana 2.
 - Confrontos: 1º x 8º, 2º x 7º, 3º x 6º, 4º x 5º.
+
+
+v3.8:
+- No link dos atletas (?aluno=1), o Mata-Mata não é editável.
+- Esconde botões, seletores e configurações do Mata-Mata.
+- Alunos veem apenas o chaveamento e pontuação.

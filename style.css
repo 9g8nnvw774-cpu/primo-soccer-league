@@ -182,3 +182,31 @@ input, select, textarea {
 @media(max-width:850px){
   .ko-start-grid,.ko-selectors { grid-template-columns:1fr; }
 }
+
+
+/* v3.8 - link dos atletas: mata-mata somente visualização */
+body.student-mode .ko-start-grid,
+body.student-mode .ko-selectors,
+body.student-mode #knockoutSelectors,
+body.student-mode #pageKnockout .card:first-child p,
+body.student-mode #pageKnockout .card:first-child .ko-start-grid {
+  display: none !important;
+}
+
+body.student-mode #pageKnockout .card:first-child {
+  padding-bottom: 8px;
+}
+
+body.student-mode #pageKnockout select,
+body.student-mode #pageKnockout button {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+body.student-mode .bracket-wrap {
+  margin-top: 10px;
+}
+
+body.student-mode .match {
+  pointer-events: none;
+}
