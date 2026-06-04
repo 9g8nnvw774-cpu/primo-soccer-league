@@ -6,3 +6,10 @@ v3.2:
 - Coluna do atleta fixa na pontuação.
 - Fotos no ranking.
 - Logo Primo Soccer na tela principal, rankings e impressão.
+
+
+v3.3:
+- P/D e P/E compactos.
+- Sem zoom no iPhone ao editar.
+- Digitação de pontos estável, sem recarregar tabela.
+- Logo substituído pelo enviado.

@@ -29,3 +29,97 @@
   .print-logo{background:transparent!important;width:48px!important;height:48px!important}
   .print-logo img{width:100%;height:100%;object-fit:contain}
 }
+
+
+/* v3.3 compacto P/D e P/E + sem zoom no iPhone */
+.score-input,
+.bonus-select {
+  width: 58px !important;
+  min-width: 58px !important;
+  max-width: 58px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 6px !important;
+  text-align: center !important;
+  font-size: 16px !important; /* impede zoom do iPhone */
+  font-weight: 900 !important;
+  border-radius: 9px !important;
+}
+
+.bonus-select {
+  width: 62px !important;
+  min-width: 62px !important;
+  max-width: 62px !important;
+}
+
+.score-points-table th:nth-child(3),
+.score-points-table th:nth-child(4),
+.score-points-table th:nth-child(5),
+.score-points-table th:nth-child(6),
+.score-points-table td:nth-child(3),
+.score-points-table td:nth-child(4),
+.score-points-table td:nth-child(5),
+.score-points-table td:nth-child(6) {
+  width: 72px !important;
+  min-width: 72px !important;
+  max-width: 72px !important;
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+}
+
+.score-points-table {
+  min-width: 560px !important;
+}
+
+.score-points-table .sticky-athlete {
+  min-width: 190px !important;
+  max-width: 220px !important;
+}
+
+.score-points-table .player-cell strong {
+  font-size: 14px;
+  line-height: 1.05;
+}
+
+.score-points-table .avatar,
+.score-points-table .avatar-placeholder {
+  width: 30px;
+  height: 30px;
+}
+
+input, select, textarea {
+  font-size: 16px !important; /* impede zoom automático no Safari iOS */
+}
+
+.logo img,
+.logo-small,
+.print-logo img {
+  object-fit: contain !important;
+}
+
+@media(max-width:850px){
+  .score-input,
+  .bonus-select {
+    width: 52px !important;
+    min-width: 52px !important;
+    max-width: 52px !important;
+  }
+  .score-points-table th:nth-child(3),
+  .score-points-table th:nth-child(4),
+  .score-points-table th:nth-child(5),
+  .score-points-table th:nth-child(6),
+  .score-points-table td:nth-child(3),
+  .score-points-table td:nth-child(4),
+  .score-points-table td:nth-child(5),
+  .score-points-table td:nth-child(6) {
+    width: 62px !important;
+    min-width: 62px !important;
+    max-width: 62px !important;
+  }
+  .score-points-table {
+    min-width: 500px !important;
+  }
+  .score-points-table .sticky-athlete {
+    min-width: 170px !important;
+  }
+}

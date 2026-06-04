@@ -35,7 +35,7 @@ function scheduleSave(){saveLocal();clearTimeout(saveTimer);saveTimer=setTimeout
 function setSync(msg,type="warn"){const el=document.getElementById("syncStatus");if(el){el.textContent=msg;el.style.color=type==="ok"?"#8ff0b3":type==="error"?"#ff8b8b":"#ffe082"}}
 async function initCloud(){try{supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);await loadCloud()}catch(e){setSync("Erro Supabase: "+e.message,"error")}}
 async function loadCloud(){try{const {data,error}=await supa.from("primo_app_state").select("data").eq("app_id",APP_ID).maybeSingle();if(error)throw error;if(data?.data){state=data.data;norm();saveLocal();setSync("Dados online carregados.","ok")}else await saveCloud();renderAll()}catch(e){setSync("Erro ao carregar online. Execute o SQL.","error");console.error(e)}}
-async function saveCloud(){if(!supa)return;try{norm();const {error}=await supa.from("primo_app_state").upsert({app_id:APP_ID,data:state,updated_at:new Date().toISOString()},{onConflict:"app_id"});if(error)throw error;setSync("Dados salvos online.","ok");renderAll()}catch(e){setSync("Erro ao salvar online.","error");console.error(e)}}
+async function saveCloud(){if(!supa)return;try{norm();const {error}=await supa.from("primo_app_state").upsert({app_id:APP_ID,data:state,updated_at:new Date().toISOString()},{onConflict:"app_id"});if(error)throw error;setSync("Dados salvos online.","ok"); if(!document.activeElement || !["INPUT","SELECT","TEXTAREA"].includes(document.activeElement.tagName)) renderAll()}catch(e){setSync("Erro ao salvar online.","error");console.error(e)}}
 function cap(p){return {dashboard:"Dashboard",cadastro:"Cadastro",atletas:"Atletas",agenda:"Agenda",treinos:"Treinos",ranking:"Ranking",knockout:"Knockout",year:"Year",print:"Print",config:"Config"}[p]}
 function setPage(p){if(document.body.classList.contains("student-mode")&&!["ranking","knockout","year"].includes(p))p="ranking";["dashboard","cadastro","atletas","agenda","treinos","ranking","knockout","year","print","config"].forEach(x=>{document.getElementById("page"+cap(x))?.classList.toggle("hidden",x!==p);document.getElementById("tab"+cap(x))?.classList.toggle("active",x===p)});renderAll()}
 function renderAll(){norm();renderMonths();renderSlotSelects();renderWeeks();renderDashboard();renderCadastro();renderBankSelect();renderMonthAthletes();renderScore();renderAgenda();renderRanking();renderYear();renderKnockout();document.querySelectorAll(".current-month-label").forEach(e=>e.textContent=month())}
@@ -55,7 +55,28 @@ function editSlot(id,idx,val){const p=participant(id);p.slots[idx]=val;p.slots=[
 function removeFromMonth(id){if(!confirm("Remover apenas deste mês? Os pontos permanecem salvos."))return;const p=participant(id,month(),false);if(p)p.slots=[];scheduleSave();renderAll()}
 function copyPreviousMonth(){const i=MONTHS.indexOf(month());if(i<=0)return alert("Não há mês anterior.");const prev=MONTHS[i-1];const cur=monthObj();Object.entries(monthObj(prev).participants||{}).forEach(([id,p])=>{if(!cur.participants[id])cur.participants[id]={athleteId:id,slots:[...(p.slots||[])],weeks:Array.from({length:5},()=>({}))}});scheduleSave();renderAll()}
 function clearMonthSchedule(){if(!confirm("Limpar agenda do mês? Pontos ficam salvos."))return;Object.values(monthObj().participants||{}).forEach(p=>p.slots=[]);scheduleSave();renderAll()}
-function renderScore(){const sl=document.getElementById("sessionSlot")?.value||slots[0];const title=document.getElementById("sessionTitle");if(title)title.textContent=`PONTUAÇÃO - ETAPA: ${month()} • SEMANA ${currentWeek+1} • ${sl}`;const body=document.getElementById("scoreBody");if(!body)return;const list=activeAthletes().filter(a=>slotsOf(a).includes(sl));body.innerHTML=list.map((a,i)=>{const s=getScore(a,currentWeek,sl);return `<tr><td>${i+1}</td><td class="sticky-athlete"><div class="player-cell">${photoHtml(a)}<strong>${esc(a.name)}</strong></div></td><td><input type="number" inputmode="numeric" value="${s.pd}" oninput="setScore('${idOf(a)}','${sl}','pd',this.value,this)"></td><td><input type="number" inputmode="numeric" value="${s.pe}" oninput="setScore('${idOf(a)}','${sl}','pe',this.value,this)"></td><td><select onchange="setScore('${idOf(a)}','${sl}','bonus',this.value,this)"><option value="0" ${s.bonus==0?"selected":""}>0</option><option value="5" ${s.bonus==5?"selected":""}>5</option><option value="7" ${s.bonus==7?"selected":""}>7</option></select></td><td class="final-cell"><strong>${scoreFinal(s)}</strong></td></tr>`}).join("")||'<tr><td colspan="6">Nenhum atleta neste horário.</td></tr>';const best=list.map(a=>({name:a.name,pts:weekTotal(a,currentWeek)})).sort((a,b)=>b.pts-a.pts)[0];const box=document.getElementById("bestWeekBox");if(box)box.innerHTML=best?`MELHOR DA SEMANA: <strong>${esc(best.name)}</strong> • ${best.pts} PTS`:""}
+function renderScore(){const sl=document.getElementById("sessionSlot")?.value||slots[0];const title=document.getElementById("sessionTitle");if(title)title.textContent=`PONTUAÇÃO - ETAPA: ${month()} • SEMANA ${currentWeek+1} • ${sl}`;const body=document.getElementById("scoreBody");if(!body)return;const list=activeAthletes().filter(a=>slotsOf(a).includes(sl));body.innerHTML=list.map((a,i)=>{const s=getScore(a,currentWeek,sl);return `<tr><td>${i+1}</td><td class="sticky-athlete"><div class="player-cell">${photoHtml(a)}<strong>${esc(a.name)}</strong></div></td><td><input type="number" inputmode="numeric" value="${s.pd}" class="score-input" oninput="setScoreLive('${idOf(a)}','${sl}','pd',this.value,this)"></td><td><input type="number" inputmode="numeric" value="${s.pe}" class="score-input" oninput="setScoreLive('${idOf(a)}','${sl}','pe',this.value,this)"></td><td><select class="bonus-select" onchange="setScoreLive('${idOf(a)}','${sl}','bonus',this.value,this)"><option value="0" ${s.bonus==0?"selected":""}>0</option><option value="5" ${s.bonus==5?"selected":""}>5</option><option value="7" ${s.bonus==7?"selected":""}>7</option></select></td><td class="final-cell"><strong>${scoreFinal(s)}</strong></td></tr>`}).join("")||'<tr><td colspan="6">Nenhum atleta neste horário.</td></tr>';const best=list.map(a=>({name:a.name,pts:weekTotal(a,currentWeek)})).sort((a,b)=>b.pts-a.pts)[0];const box=document.getElementById("bestWeekBox");if(box)box.innerHTML=best?`MELHOR DA SEMANA: <strong>${esc(best.name)}</strong> • ${best.pts} PTS`:""}
+
+function setScoreLive(id,sl,field,val,el){
+  const a=state.athletes.find(x=>idOf(x)===id);
+  if(!a)return;
+  const s=getScore(a,currentWeek,sl);
+  s[field]=n(val);
+  saveLocal();
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(saveCloud,700);
+  const tr=el.closest("tr");
+  if(tr){
+    const totalCell=tr.querySelector(".final-cell strong") || tr.querySelector(".final-cell");
+    if(totalCell) totalCell.textContent=scoreFinal(s);
+  }
+  // Atualiza ranking e totais sem reconstruir a tabela de digitação
+  renderRanking();
+  renderYear();
+  renderKnockout();
+  renderDashboard();
+}
+
 function setScore(id,sl,field,val,el){const a=state.athletes.find(x=>idOf(x)===id);if(!a)return;const s=getScore(a,currentWeek,sl);s[field]=n(val);scheduleSave();renderScore();renderRanking();renderYear();renderKnockout();renderDashboard()}
 function clearCurrentSession(){const sl=document.getElementById("sessionSlot").value;if(!confirm("Limpar este horário?"))return;activeAthletes().forEach(a=>{const w=weeksOf(a);if(w[currentWeek]?.[sl])w[currentWeek][sl]=emptyScore()});scheduleSave();renderAll()}
 function renderAgenda(){const grid=document.getElementById("agendaGrid");if(!grid)return;grid.innerHTML=slotData.map(slot=>{const list=activeAthletes().filter(a=>slotsOf(a).includes(slot.name));return `<div class="agenda-card"><div class="agenda-head"><strong>${slot.name}</strong><span class="badge">${list.length}/${slot.vagas}</span></div><div class="agenda-list">${list.map(a=>`<div class="agenda-athlete"><span>${esc(a.name)}</span><strong>${monthTotal(a)} pts</strong></div>`).join("")||"<div>Nenhum atleta</div>"}</div></div>`}).join("")}
@@ -97,5 +118,5 @@ function refreshFromState(){
 document.addEventListener("visibilitychange",()=>{
   if(!document.hidden){ refreshFromState(); if(supa) loadCloud(); }
 });
-window.addEventListener("focus",()=>{ refreshFromState(); });
-setInterval(()=>{ refreshFromState(); },2500);
+window.addEventListener("focus",()=>{ if(!document.activeElement || !["INPUT","SELECT","TEXTAREA"].includes(document.activeElement.tagName)) refreshFromState(); });
+setInterval(()=>{ if(!document.activeElement || !["INPUT","SELECT","TEXTAREA"].includes(document.activeElement.tagName)) refreshFromState(); },2500);
