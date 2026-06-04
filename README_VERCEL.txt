@@ -1,1 +1,1 @@
-Versão corrigida. Envie os arquivos abertos para GitHub/Vercel. Não envie o ZIP fechado.
+Versão v3.1 corrigida: atleta não fica mais fora do mês após adicionar. Visual das tabelas estilo UEFA/Champions. Envie arquivos abertos ao GitHub.
