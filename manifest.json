@@ -2,11 +2,9 @@
   "name": "Primo Soccer League 2026",
   "short_name": "Primo League",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "orientation": "portrait",
   "theme_color": "#071629",
   "background_color": "#071629",
-  "icons": [],
-  "scope": "./",
-  "description": "App Primo Soccer League com atualização automática."
+  "icons": []
 }
