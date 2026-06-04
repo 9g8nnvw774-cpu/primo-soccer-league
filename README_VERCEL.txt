@@ -25,3 +25,11 @@ v3.6:
 - Corrigido salvamento da foto do atleta.
 - Foto é compactada antes de salvar para evitar falha no banco/localStorage.
 - Foto aparece no perfil, ranking, pontuação e agenda.
+
+
+v3.7:
+- Mata-mata manual.
+- Escolha a semana em que começa as quartas.
+- Seleção dos 8 classificados.
+- Botão para classificar pelos 8 melhores até a Semana 2.
+- Confrontos: 1º x 8º, 2º x 7º, 3º x 6º, 4º x 5º.

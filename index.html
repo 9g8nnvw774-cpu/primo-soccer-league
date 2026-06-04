@@ -61,7 +61,29 @@
 </section>
 
 <section id="pageRanking" class="page hidden"><div class="card"><div class="section-title-logo"><img src="logo-primo-soccer.png" class="logo-small"><h2>Ranking Pontuador - <span class="current-month-label">MAIO</span></h2></div><div id="rankingList" class="ranking-list"></div></div></section>
-<section id="pageKnockout" class="page hidden"><div class="card"><div class="section-title-logo"><img src="logo-primo-soccer.png" class="logo-small"><h2>Chaveamento Mata-Mata</h2></div><p>Top 8 após a Semana 2.</p></div><div id="knockoutContent" class="bracket-wrap"></div></section>
+<section id="pageKnockout" class="page hidden">
+<div class="card">
+  <div class="section-title-logo"><img src="logo-primo-soccer.png" class="logo-small"><h2>Chaveamento Mata-Mata</h2></div>
+  <p>Escolha em qual semana começa o mata-mata e selecione os 8 classificados. Você pode preencher automaticamente pelo ranking acumulado até a Semana 2.</p>
+
+  <div class="ko-start-grid no-print">
+    <label>
+      Início do Mata-Mata
+      <select id="koStartWeek" onchange="setKnockoutStartWeek(this.value)">
+        <option value="2">Semana 3 - Quartas de finais</option>
+        <option value="1">Semana 2 - Quartas de finais</option>
+        <option value="3">Semana 4 - Quartas de finais</option>
+      </select>
+    </label>
+    <button onclick="fillKnockoutFromWeek2()" class="success">Classificar 8 melhores até Semana 2</button>
+    <button onclick="saveKnockoutManual()" class="secondary">Salvar classificados</button>
+    <button onclick="clearKnockoutManual()" class="danger">Limpar mata-mata</button>
+  </div>
+
+  <div id="knockoutSelectors" class="ko-selectors"></div>
+</div>
+<div id="knockoutContent" class="bracket-wrap"></div>
+</section>
 <section id="pageYear" class="page hidden"><div class="card"><div class="section-title-logo"><img src="logo-primo-soccer.png" class="logo-small"><h2>Total Geral do Ano</h2></div><div class="table-wrap"><table class="league-table annual-table"><thead><tr><th>POS</th><th>ATLETA</th><th>JAN</th><th>FEV</th><th>MAR</th><th>ABR</th><th>MAI</th><th>JUN</th><th>JUL</th><th>AGO</th><th>SET</th><th>OUT</th><th>NOV</th><th>DEZ</th><th>TOTAL</th></tr></thead><tbody id="yearBody"></tbody></table></div></div></section>
 <section id="pagePrint" class="page hidden"><div class="card"><h2>Impressões</h2><div class="print-actions"><button onclick="printRanking()" class="print-btn">Imprimir Pontuação</button><button onclick="printYear()" class="print-btn">Imprimir Total Anual</button><button onclick="printKnockout()" class="print-btn">Imprimir Mata-Mata</button><button onclick="generateAthleteLink()" class="share-btn">Link atletas</button></div></div></section>
 <section id="pageConfig" class="page hidden"><div class="card"><h2>Configurações</h2><button onclick="forceSync()" class="success">Sincronizar agora</button><button onclick="reloadOnline()" class="secondary">Recarregar online</button><p>v3.1.0</p></div></section>

@@ -152,7 +152,177 @@ function clearCurrentSession(){const sl=document.getElementById("sessionSlot").v
 function renderAgenda(){const grid=document.getElementById("agendaGrid");if(!grid)return;grid.innerHTML=slotData.map(slot=>{const list=activeAthletes().filter(a=>slotsOf(a).includes(slot.name));return `<div class="agenda-card"><div class="agenda-head"><strong>${slot.name}</strong><span class="badge">${list.length}/${slot.vagas}</span></div><div class="agenda-list">${list.map(a=>`<div class="agenda-athlete"><span>${esc(a.name)}</span><strong>${monthTotal(a)} pts</strong></div>`).join("")||"<div>Nenhum atleta</div>"}</div></div>`}).join("")}
 function renderRanking(){const el=document.getElementById("rankingList");if(!el)return;el.innerHTML=ranked().map((a,i)=>`<div class="rank-row"><div class="rank-left"><span>${i===0?"🥇":i===1?"🥈":i===2?"🥉":"⚽"}</span><span class="rank-photo">${a.photo?`<img src="${a.photo}" class="avatar">`:`<span class="avatar-placeholder">${initials(a.name)}</span>`}</span><span>${i+1}º - ${esc(a.name)}</span></div><strong>${a.total} pts</strong></div>`).join("")||"<div>Nenhum atleta ativo.</div>"}
 function renderYear(){const body=document.getElementById("yearBody");if(!body)return;body.innerHTML=rankedYear().map((a,i)=>`<tr><td>${i+1}</td><td>${esc(a.name)}</td>${MONTHS.map(m=>`<td>${monthTotalById(idOf(a),m)||"-"}</td>`).join("")}<td><strong>${a.year}</strong></td></tr>`).join("")}
-function renderKnockout(){const el=document.getElementById("knockoutContent");if(!el)return;const top=activeAthletes().map(a=>({...a,seed:weekTotal(a,0)+weekTotal(a,1)})).sort((a,b)=>b.seed-a.seed).slice(0,8);if(top.length<8){el.innerHTML='<div class="card">Mata-mata será formado quando houver 8 atletas ativos no mês.</div>';return}const games=[[0,7],[3,4],[2,5],[1,6]];el.innerHTML=games.map((g,i)=>`<div class="match"><h3>Quartas ${i+1}</h3><div>${g[0]+1}º ${esc(top[g[0]].name)} - ${weekTotal(top[g[0]],2)} pts</div><div>${g[1]+1}º ${esc(top[g[1]].name)} - ${weekTotal(top[g[1]],2)} pts</div></div>`).join("")}
+
+function koState(){
+  const mo=monthObj();
+  if(!mo.knockout) mo.knockout={startWeek:2,seeds:["","","","","","","",""]};
+  if(!Array.isArray(mo.knockout.seeds)) mo.knockout.seeds=["","","","","","","",""];
+  if(mo.knockout.startWeek===undefined) mo.knockout.startWeek=2;
+  return mo.knockout;
+}
+
+function setKnockoutStartWeek(value){
+  koState().startWeek=Number(value);
+  scheduleSave();
+  renderKnockout();
+}
+
+function pointsUntilWeek(a,lastWeekIndex){
+  let total=0;
+  for(let w=0; w<=lastWeekIndex; w++) total+=weekTotal(a,w);
+  return total;
+}
+
+function rankedForKnockout(){
+  return activeAthletes()
+    .map(a=>({...a,seedPoints:pointsUntilWeek(a,1)}))
+    .sort((a,b)=>b.seedPoints-a.seedPoints||a.name.localeCompare(b.name));
+}
+
+function renderKnockoutSelectors(){
+  const box=document.getElementById("knockoutSelectors");
+  if(!box)return;
+  const ko=koState();
+  const start=document.getElementById("koStartWeek");
+  if(start) start.value=String(ko.startWeek);
+
+  const athletes=activeAthletes();
+  const options='<option value="">Selecionar atleta</option>'+athletes
+    .map(a=>`<option value="${idOf(a)}">${esc(a.name)} • ${pointsUntilWeek(a,1)} pts até S2</option>`)
+    .join("");
+
+  box.innerHTML=Array.from({length:8},(_,i)=>`
+    <div class="ko-seed">
+      <label>${i+1}º classificado</label>
+      <select id="koSeed${i}" onchange="setKnockoutSeed(${i},this.value)">
+        ${options}
+      </select>
+    </div>
+  `).join("");
+
+  ko.seeds.forEach((id,i)=>{
+    const sel=document.getElementById("koSeed"+i);
+    if(sel && id && [...sel.options].some(o=>o.value===id)) sel.value=id;
+  });
+}
+
+function setKnockoutSeed(index,id){
+  koState().seeds[index]=id;
+  scheduleSave();
+  renderKnockout();
+}
+
+function fillKnockoutFromWeek2(){
+  const top=rankedForKnockout().slice(0,8);
+  if(top.length<8){
+    alert("Você precisa ter pelo menos 8 atletas ativos no mês para preencher automaticamente.");
+    return;
+  }
+  koState().seeds=top.map(a=>idOf(a));
+  scheduleSave();
+  renderKnockout();
+  alert("Classificados preenchidos pelos 8 melhores até a Semana 2.");
+}
+
+function saveKnockoutManual(){
+  const ko=koState();
+  for(let i=0;i<8;i++){
+    const sel=document.getElementById("koSeed"+i);
+    ko.seeds[i]=sel?sel.value:"";
+  }
+  const ids=ko.seeds.filter(Boolean);
+  if(ids.length<8){
+    alert("Selecione os 8 classificados para gerar os confrontos.");
+    return;
+  }
+  if(new Set(ids).size!==ids.length){
+    alert("Existe atleta repetido nos classificados. Escolha 8 atletas diferentes.");
+    return;
+  }
+  scheduleSave();
+  renderKnockout();
+  alert("Classificados salvos e confrontos gerados.");
+}
+
+function clearKnockoutManual(){
+  if(!confirm("Limpar os classificados do mata-mata deste mês?"))return;
+  koState().seeds=["","","","","","","",""];
+  scheduleSave();
+  renderKnockout();
+}
+
+function athleteByIdSafe(id){
+  return state.athletes.find(a=>idOf(a)===id);
+}
+
+function matchWinnerByWeek(a,b,weekIndex){
+  if(!a&&!b)return null;
+  if(a&&!b)return a;
+  if(!a&&b)return b;
+  const pa=weekTotal(a,weekIndex), pb=weekTotal(b,weekIndex);
+  if(pa>pb)return a;
+  if(pb>pa)return b;
+  return null;
+}
+
+function renderMatch(title,a,b,weekIndex){
+  const pa=a?weekTotal(a,weekIndex):0;
+  const pb=b?weekTotal(b,weekIndex):0;
+  const winner=matchWinnerByWeek(a,b,weekIndex);
+  return `<div class="match">
+    <h3>${title}</h3>
+    <div class="match-line"><span>${a?esc(a.name):"-"}</span><strong>${a?pa:"-"}</strong></div>
+    <div class="match-line"><span>${b?esc(b.name):"-"}</span><strong>${b?pb:"-"}</strong></div>
+    <div class="match-line"><span>Vencedor</span><strong>${winner?esc(winner.name):"Empate/aguardando"}</strong></div>
+  </div>`;
+}
+
+function renderKnockout(){
+  renderKnockoutSelectors();
+  const el=document.getElementById("knockoutContent");
+  if(!el)return;
+
+  const ko=koState();
+  const ids=ko.seeds;
+  const players=ids.map(id=>id?athleteByIdSafe(id):null);
+  const filled=players.filter(Boolean).length;
+
+  if(filled<8){
+    el.innerHTML='<div class="card">Selecione os 8 classificados ou clique em “Classificar 8 melhores até Semana 2”.</div>';
+    return;
+  }
+
+  // Confrontos:
+  // 1º x 8º, 2º x 7º, 3º x 6º, 4º x 5º.
+  const start=Number(ko.startWeek||2);
+  const qfWeek=start;
+  const semiWeek=Math.min(start+1,4);
+  const finalWeek=Math.min(start+2,4);
+
+  const qf=[
+    [players[0],players[7],"1º x 8º"],
+    [players[1],players[6],"2º x 7º"],
+    [players[2],players[5],"3º x 6º"],
+    [players[3],players[4],"4º x 5º"]
+  ];
+
+  const semi1A=matchWinnerByWeek(qf[0][0],qf[0][1],qfWeek);
+  const semi1B=matchWinnerByWeek(qf[1][0],qf[1][1],qfWeek);
+  const semi2A=matchWinnerByWeek(qf[2][0],qf[2][1],qfWeek);
+  const semi2B=matchWinnerByWeek(qf[3][0],qf[3][1],qfWeek);
+
+  const finalA=matchWinnerByWeek(semi1A,semi1B,semiWeek);
+  const finalB=matchWinnerByWeek(semi2A,semi2B,semiWeek);
+
+  el.innerHTML=
+    `<div class="card"><div class="ko-stage-label">Quartas de finais • Semana ${qfWeek+1}</div></div>`+
+    qf.map((g,i)=>renderMatch(`Quartas ${i+1} • ${g[2]}`,g[0],g[1],qfWeek)).join("")+
+    `<div class="card"><div class="ko-stage-label">Semifinais • Semana ${semiWeek+1}</div></div>`+
+    renderMatch("Semi 1",semi1A,semi1B,semiWeek)+
+    renderMatch("Semi 2",semi2A,semi2B,semiWeek)+
+    `<div class="card"><div class="ko-stage-label">Final • Semana ${finalWeek+1}</div></div>`+
+    renderMatch("Final",finalA,finalB,finalWeek);
+}
 function renderDashboard(){const a=document.getElementById("dashActive");if(!a)return;a.textContent=activeAthletes().length;document.getElementById("dashBank").textContent=state.athletes.filter(x=>x.active!==false).length;document.getElementById("dashMonthPoints").textContent=activeAthletes().reduce((s,x)=>s+monthTotal(x),0);const b=ranked()[0];document.getElementById("dashBest").innerHTML=b?`🥇 <strong>${esc(b.name)}</strong> • ${b.total} pts`:"-"}
 function openStats(id){const a=state.athletes.find(x=>idOf(x)===id);if(!a)return;let pd=0,pe=0,tot=0,meses=0;Object.keys(state.months||{}).forEach(m=>{const p=state.months[m]?.participants?.[id];if(!p)return;let mt=0;(p.weeks||[]).forEach(w=>Object.values(w||{}).forEach(s=>{pd+=n(s.pd);pe+=n(s.pe);mt+=scoreFinal(s)}));if(mt>0)meses++;tot+=mt});const tech=pd+pe,pdp=tech?Math.round(pd/tech*100):0,pep=tech?100-pdp:0;document.getElementById("statsContent").innerHTML=`<h2>${esc(a.name)}</h2><div class="grid3"><div class="card"><span>Total</span><strong>${tot}</strong></div><div class="card"><span>P/D</span><strong>${pd}</strong></div><div class="card"><span>P/E</span><strong>${pe}</strong></div></div><h3>Perna direita ${pdp}%</h3><div class="bar-track"><div class="bar-fill" style="width:${pdp}%"></div></div><h3>Perna esquerda ${pep}%</h3><div class="bar-track"><div class="bar-fill" style="width:${pep}%"></div></div><p>Meses com pontuação: <strong>${meses}</strong></p>`;document.getElementById("statsModal").classList.add("open")}
 function closeStats(){document.getElementById("statsModal").classList.remove("open")}

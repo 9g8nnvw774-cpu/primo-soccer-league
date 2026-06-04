@@ -125,3 +125,60 @@ input, select, textarea {
 }
 
 .main-title{text-align:center;font-weight:900;font-size:42px}.main-subtitle{text-align:center;font-weight:900;font-size:28px}.month-highlight{text-align:center;font-size:24px;font-weight:900;color:#7ee0ff}
+
+/* v3.7 Mata-mata manual */
+.ko-start-grid {
+  display:grid;
+  grid-template-columns: 1.2fr 1fr 1fr 1fr;
+  gap:8px;
+  margin:12px 0;
+  align-items:end;
+}
+.ko-start-grid label {
+  color:#7ee0ff;
+  font-weight:900;
+  font-size:12px;
+  text-transform:uppercase;
+}
+.ko-start-grid label select {
+  margin-top:6px;
+}
+.ko-selectors {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+}
+.ko-seed {
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(126,224,255,.25);
+  border-radius:12px;
+  padding:10px;
+}
+.ko-seed label {
+  display:block;
+  font-weight:900;
+  color:#7ee0ff;
+  margin-bottom:6px;
+  font-size:12px;
+}
+.match-line {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:8px;
+  background:rgba(255,255,255,.06);
+  border-radius:10px;
+  margin:6px 0;
+}
+.match-line strong { color:#7ee0ff; }
+.ko-stage-label {
+  color:#7ee0ff;
+  font-weight:900;
+  margin:10px 0;
+  text-transform:uppercase;
+  letter-spacing:1px;
+}
+@media(max-width:850px){
+  .ko-start-grid,.ko-selectors { grid-template-columns:1fr; }
+}
