@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Primo Soccer League 2026</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#071629">
+  <meta name="app-version" content="2.1.1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Primo League">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="app-shell">
+  <section class="cover no-print">
+    <img id="coverImage" src="capa-primo-soccer.jpeg" alt="Capa">
+    <div class="cover-actions">
+      <label class="cover-btn">Trocar capa<input id="coverInput" type="file" accept="image/*"></label>
+      <button onclick="removeCover()" class="cover-remove">Tirar capa</button>
+      <div class="month-editor">
+        <label>Mês</label>
+        <select id="monthName">
+          <option>JANEIRO</option><option>FEVEREIRO</option><option>MARÇO</option><option>ABRIL</option>
+          <option selected>MAIO</option><option>JUNHO</option><option>JULHO</option><option>AGOSTO</option>
+          <option>SETEMBRO</option><option>OUTUBRO</option><option>NOVEMBRO</option><option>DEZEMBRO</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <nav class="main-tabs no-print">
+    <button id="tabScore" class="main-tab active" onclick="setPage('score')">Pontuação</button>
+    <button id="tabCadastro" class="main-tab" onclick="setPage('cadastro')">Cadastro</button>
+    <button id="tabAthletes" class="main-tab" onclick="setPage('athletes')">Atletas</button>
+    <button id="tabAgenda" class="main-tab" onclick="setPage('agenda')">Agenda</button>
+    <button id="tabKnockout" class="main-tab" onclick="setPage('knockout')">Mata-Mata</button>
+    <button id="tabYear" class="main-tab" onclick="setPage('year')">Ranking Anual</button>
+    <button id="tabRanking" class="main-tab" onclick="setPage('ranking')">Ranking Pontuador</button>
+    <button id="tabConfig" class="main-tab" onclick="setPage('config')">Config.</button>
+  </nav>
+
+
+  <section id="pageCadastro" class="page no-print hidden">
+    <div class="panel">
+      <h2>Cadastro de Atletas</h2>
+      <p class="hint">Cada atleta cadastrado aqui recebe um ID fixo. Esse atleta fica salvo no banco de dados e pode entrar em qualquer mês de disputa sem perder histórico.</p>
+      <div class="form-grid cadastro-form">
+        <input id="cadastroNomeAtleta" placeholder="Nome do atleta">
+        <button onclick="cadastrarAtletaBanco()" class="success">Cadastrar atleta</button>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header"><h2>Banco de Dados de Atletas</h2></div>
+      <div class="table-wrap">
+        <table class="athletes-table">
+          <thead>
+            <tr><th>#</th><th>Foto</th><th>Atleta</th><th>ID Fixo</th><th>Total Ano</th><th>Ações</th></tr>
+          </thead>
+          <tbody id="cadastroBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="pageAthletes" class="page no-print hidden">
+    <div class="panel">
+      <h2>Atletas da Disputa do Mês</h2>
+      <p class="hint">Selecione atletas já cadastrados no banco e escolha os horários que ele vai treinar e pontuar neste mês. Alterar horário não apaga pontos já lançados.</p>
+      <div class="form-grid escala-form">
+        <select id="selectAtletaBanco"></select>
+        <select id="selectHorario1"></select>
+        <select id="selectHorario2"></select>
+        <button onclick="adicionarAtletaNoMes()" class="success">Adicionar ao mês</button>
+      </div>
+      <div class="month-actions">
+        <button onclick="copiarAgendaMesAnterior()" class="secondary">Copiar agenda mês anterior</button>
+        <button onclick="limparAgendaMesAtual()" class="danger">Limpar agenda do mês</button>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header"><h2>Agenda de Atletas do Mês</h2></div>
+      <div class="table-wrap">
+        <table class="athletes-table">
+          <thead>
+            <tr><th>#</th><th>Foto</th><th>Atleta</th><th>Horário 1</th><th>Horário 2</th><th>Pontos Mês</th><th>Ações</th></tr>
+          </thead>
+          <tbody id="atletasMesBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="pageAgenda" class="page no-print hidden">
+    <div class="panel agenda-panel">
+      <h2>Agenda dos horários</h2>
+      <p class="hint">Os atletas cadastrados aparecem automaticamente nos horários escolhidos. A agenda mostra vagas usadas e disponíveis.</p>
+    </div>
+    <div id="agendaGrid" class="agenda-grid"></div>
+  </section>
+
+  <section id="pageScore" class="page no-print">
+    <section class="toolbar">
+      <select id="sessionSlot" onchange="renderScoreTable()"></select>
+      <button onclick="clearCurrentSession()" class="secondary">Limpar horário</button>
+      <button onclick="exportCSV()" class="success">Exportar CSV</button>
+      <button onclick="window.print()" class="print-btn">Story Ranking</button>
+      <button onclick="generateAthleteLink()" class="share-btn">Link atletas</button>
+      <button onclick="saveMonthToYear()" class="year-btn">Salvar mês</button>
+    </section>
+
+    <nav class="tabs" id="weekTabs"></nav>
+
+    <section class="table-card">
+      <div class="table-header">
+        <h2 id="sessionTitle">Pontuação</h2>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="sticky-num">#</th>
+              <th class="sticky-player">Atleta</th>
+              <th>P/D</th>
+              <th>P/E</th>
+              <th>Total</th>
+              <th>Bônus</th>
+              <th>Final</th>
+            </tr>
+          </thead>
+          <tbody id="scoreBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </section>
+
+
+  <section id="pageKnockout" class="page no-print hidden">
+    <div class="panel knockout-panel">
+      <h2>Campeonato Eliminatório</h2>
+      <p class="hint">Top 8 após a Semana 2. Quartas na Semana 3, semifinais na Semana 4 e final na Semana 5. Vence quem fizer mais pontos na semana da fase.</p>
+      <button onclick="printKnockout()" class="print-btn">Imprimir mata-mata</button>
+    </div>
+    <div id="knockoutContent" class="knockout-wrap"></div>
+  </section>
+
+
+  <section id="pageYear" class="page no-print hidden">
+    <div class="panel year-panel">
+      <h2>Total Geral do Ano</h2>
+      <p class="hint">Depois de finalizar cada mês, clique em <strong>Salvar mês</strong>. O app soma todos os meses salvos no total anual.</p>
+      <button onclick="printYearTotal()" class="print-btn">Imprimir total do ano</button>
+    </div>
+    <div class="table-card">
+      <div class="table-header"><h2>Classificação Anual</h2></div>
+      <div class="table-wrap">
+        <table class="year-table">
+          <thead><tr><th>Pos</th><th>Foto</th><th>Atleta</th><th>Mês Atual</th><th>Total Ano</th></tr></thead>
+          <tbody id="yearBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="pageRanking" class="page no-print hidden">
+    <section class="ranking-card">
+      <h2>Ranking Final - Soma do Campeonato</h2>
+      <div id="rankingList" class="ranking-list"></div>
+    </section>
+  </section>
+
+  
+  <section id="pageConfig" class="page no-print hidden">
+    <div class="panel config-panel">
+      <h2>Configurações do App</h2>
+      <p class="hint">Use esta área quando o app da tela inicial do iPhone não atualizar após publicar uma nova versão no Netlify.</p>
+
+      <div class="config-grid">
+        <button onclick="manualAppUpdate()" class="success">🔄 Atualizar aplicativo</button>
+        <button onclick="clearAppCache()" class="secondary">🧹 Limpar cache do app</button>
+        <button onclick="checkForUpdates(true)" class="print-btn">🔎 Verificar nova versão</button>
+        <button onclick="showInstallHelp()" class="share-btn">📲 Ajuda tela inicial</button>
+        <button onclick="window.location.href='./reset.html?v='+Date.now()" class="danger">🧨 Reset total iPhone</button>
+      </div>
+
+      <div class="sync-box"><strong>Sincronização online</strong><span id="syncStatus">Carregando Supabase...</span><button onclick="forceCloudSync()" class="success">☁️ Sincronizar agora</button></div>
+
+      <div class="version-box">
+        <strong>Primo Soccer League</strong>
+        <span>Versão instalada: <b id="currentVersion">2.1.1</b></span>
+        <span>Última verificação: <b id="lastUpdateCheck">-</b></span>
+      </div>
+
+      <div id="installHelp" class="help-box hidden">
+        <h3>Passo a passo no iPhone</h3>
+        <ol>
+          <li>Publique o novo ZIP no Netlify.</li>
+          <li>Abra o link primeiro no Safari.</li>
+          <li>Toque em “Atualizar aplicativo”.</li>
+          <li>Feche e abra novamente o app.</li>
+          <li>Se continuar antigo, toque em “Limpar cache do app”.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="print-area">
+    <div class="champions-print">
+      <div class="champions-header">
+        <div>
+          <p>PRIMO SOCCER LEAGUE 2026</p>
+          <h1>RANKING FINAL - <span id="printMonth">MAIO</span></h1>
+          <small>CAMPEONATO ANUAL</small>
+        </div>
+        <div class="champion-highlight">
+          <span>CAMPEÃO</span>
+          <img id="printChampionPhoto" alt="">
+          <strong id="printChampionName">-</strong>
+          <b id="printChampionPoints">0 pts</b>
+        </div>
+      </div>
+      <table class="champions-table">
+        <thead><tr><th>POS</th><th>FOTO</th><th>JOGADOR</th><th>S1</th><th>S2</th><th>S3</th><th>S4</th><th>S5</th><th>PTS</th></tr></thead>
+        <tbody id="printRankingBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="knockout-print-area">
+    <div class="knockout-print">
+      <div class="ko-print-header">
+        <p>PRIMO SOCCER LEAGUE 2026</p>
+        <h1>MATA-MATA - <span id="koPrintMonth">MAIO</span></h1>
+        <small>Top 8 após S2 • Quartas S3 • Semi S4 • Final S5</small>
+      </div>
+      <div id="knockoutPrintContent"></div>
+    </div>
+  </section>
+
+
+  <section class="year-print-area">
+    <div class="year-print">
+      <div class="year-print-header">
+        <img src="total-ano-modelo.jpeg" alt="">
+        <h1>TOTAL GERAL DO ANO</h1>
+      </div>
+      <table class="year-print-table">
+        <thead><tr><th>POS</th><th>FOTO</th><th>ATLETA</th><th>MÊS</th><th>TOTAL</th></tr></thead>
+        <tbody id="yearPrintBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<div id="photoModal" class="modal no-print" onclick="closeModal()">
+  <button onclick="closeModal()" class="modal-close">×</button>
+  <img id="modalImage" alt="Foto">
+</div>
+
+<div id="cropModal" class="modal crop-modal no-print">
+  <div class="crop-card" onclick="event.stopPropagation()">
+    <h2>Recortar foto</h2>
+    <div class="crop-frame" id="cropFrame"><img id="cropImage" alt=""><div class="crop-circle"></div></div>
+    <label class="zoom-label">Zoom<input type="range" id="cropZoom" min="1" max="3" step="0.05" value="1"></label>
+    <div class="crop-actions"><button onclick="cancelCrop()" class="danger">Cancelar</button><button onclick="saveCrop()" class="success">Salvar</button></div>
+  </div>
+</div>
+
+
+
+<div id="statsModal" class="modal no-print">
+  <div class="stats-card" onclick="event.stopPropagation()">
+    <button onclick="closeStats()" class="modal-close">×</button>
+    <div id="statsContent"></div>
+  </div>
+</div>
+
+<div id="shareModal" class="modal no-print">
+  <div class="share-card" onclick="event.stopPropagation()">
+    <h2>Link dos atletas</h2>
+    <p>Copie este link e envie no WhatsApp. Ele abre em modo visualização, sem edição.</p>
+    <textarea id="shareLink" readonly></textarea>
+    <div class="share-actions">
+      <button onclick="copyShareLink()" class="success">Copiar link</button>
+      <button onclick="closeShareModal()" class="danger">Fechar</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="updateModal" class="modal no-print">
+  <div class="update-card" onclick="event.stopPropagation()">
+    <h2>Nova versão disponível</h2>
+    <p>Foi encontrada uma nova versão do Primo Soccer League.</p>
+    <div class="update-version">
+      <span>Versão instalada: <b id="installedVersionText">2.1.1</b></span>
+      <span>Nova versão: <b id="newVersionText">-</b></span>
+    </div>
+    <div class="share-actions">
+      <button onclick="applyAppUpdate()" class="success">Atualizar agora</button>
+      <button onclick="closeUpdateModal()" class="secondary">Depois</button>
+    </div>
+  </div>
+</div>
+
+<div class="app-footer no-print">
+  Primo Soccer League v<span id="footerVersion">2.1.1</span>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="script.js"></script>
+<script>
+registerAppServiceWorker();
+</script>
+</body>
+</html>

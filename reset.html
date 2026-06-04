@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Reset Primo Soccer League</title>
+  <style>
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Arial,Helvetica,sans-serif;
+      background:linear-gradient(180deg,#06117a,#071629);
+      color:white;
+      min-height:100vh;
+      display:grid;
+      place-items:center;
+      padding:20px;
+      text-align:center;
+    }
+    .card{
+      width:min(92vw,520px);
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(126,224,255,.35);
+      border-radius:26px;
+      padding:26px;
+      box-shadow:0 20px 60px rgba(0,0,0,.35);
+    }
+    h1{margin:0 0 10px;font-size:30px;color:#7ee0ff}
+    p{color:#dff7ff;line-height:1.5}
+    button{
+      width:100%;
+      border:0;
+      border-radius:16px;
+      padding:16px;
+      font-size:18px;
+      font-weight:900;
+      background:#7ee0ff;
+      color:#06101f;
+      margin-top:12px;
+    }
+    .danger{background:#ff8b8b}
+    .success{background:#8ff0b3}
+    .status{
+      margin-top:14px;
+      padding:12px;
+      border-radius:14px;
+      background:rgba(0,0,0,.25);
+      color:#fff;
+      font-weight:800;
+      min-height:44px;
+    }
+    small{display:block;margin-top:18px;color:#cfe6ff}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Reset do App</h1>
+    <p>Use esta página quando o app da tela inicial do iPhone não atualizar.</p>
+    <button onclick="resetApp()" class="danger">Limpar cache e atualizar</button>
+    <button onclick="openApp()" class="success">Abrir app atualizado</button>
+    <div id="status" class="status">Pronto para limpar.</div>
+    <small>Primo Soccer League v2.0.1</small>
+  </div>
+
+<script>
+async function resetApp(){
+  const status=document.getElementById("status");
+  status.textContent="Limpando Service Workers...";
+  try{
+    if("serviceWorker" in navigator){
+      const regs=await navigator.serviceWorker.getRegistrations();
+      for(const reg of regs) await reg.unregister();
+    }
+  }catch(e){}
+
+  status.textContent="Limpando caches...";
+  try{
+    if("caches" in window){
+      const keys=await caches.keys();
+      await Promise.all(keys.map(k=>caches.delete(k)));
+    }
+  }catch(e){}
+
+  status.textContent="Limpando armazenamento temporário...";
+  try{
+    sessionStorage.clear();
+  }catch(e){}
+
+  status.textContent="Cache limpo. Abrindo app atualizado...";
+  setTimeout(()=>{
+    window.location.href="./index.html?v="+Date.now();
+  },900);
+}
+
+function openApp(){
+  window.location.href="./index.html?v="+Date.now();
+}
+</script>
+</body>
+</html>
