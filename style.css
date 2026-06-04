@@ -229,3 +229,23 @@ body.student-mode .match {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* v4.3 impressão story 9:16 compacta */
+@media print{
+  @page{size:1080px 1920px;margin:0}
+  body{background:#06117a!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  .print-card.story-print{width:1080px!important;height:1920px!important;max-height:1920px!important;overflow:hidden!important;background:radial-gradient(circle at top,#0b52ff 0,#06117a 45%,#020817 100%)!important;color:#fff!important;padding:42px 46px!important}
+  .compact-print-title{align-items:center!important;gap:18px!important;padding-bottom:18px!important;margin-bottom:18px!important;border-bottom:2px solid rgba(126,224,255,.55)!important}
+  .compact-print-title h2{font-size:34px!important;margin:0!important;letter-spacing:2px!important}
+  .compact-print-title h1{font-size:28px!important;margin:4px 0 0!important;letter-spacing:1px!important}
+  .print-logo{width:76px!important;height:76px!important}
+  .print-ranking-table{width:100%!important;border-collapse:collapse!important;font-size:20px!important}
+  .print-ranking-table th{background:#071c47!important;color:#7ee0ff!important;padding:8px 6px!important;font-size:18px!important;text-transform:uppercase!important}
+  .print-ranking-table td{padding:5px 6px!important;height:43px!important;border:1px solid rgba(126,224,255,.35)!important;font-weight:800!important}
+  .print-ranking-table tr:nth-child(odd) td{background:rgba(255,255,255,.07)!important}
+  .print-ranking-table tr:nth-child(even) td{background:rgba(5,18,48,.82)!important}
+  .print-ranking-table td:nth-child(1){width:58px!important;text-align:center!important}
+  .print-ranking-table td:nth-child(2){width:62px!important;text-align:center!important}
+  .print-ranking-table td:nth-child(4){width:110px!important;text-align:center!important;color:#7ee0ff!important;font-size:22px!important}
+  .print-photo,.print-photo-placeholder{width:34px!important;height:34px!important;border-radius:50%!important;object-fit:cover!important;display:inline-grid!important;place-items:center!important;border:2px solid #7ee0ff!important;background:#071c47!important;color:#7ee0ff!important;font-size:12px!important;font-weight:900!important;vertical-align:middle!important}
+}

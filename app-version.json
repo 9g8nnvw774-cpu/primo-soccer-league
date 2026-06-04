@@ -1,4 +1,4 @@
 {
-  "version": "4.2.0",
-  "message": "Correção definitiva: mês selecionado não volta para Janeiro, mesmo após sincronizar com Supabase."
+  "version": "4.3.0",
+  "message": "Mês fixo e impressão 9:16 com foto e pontos."
 }
