@@ -1,0 +1,55 @@
+Versão v3.1 corrigida: atleta não fica mais fora do mês após adicionar. Visual das tabelas estilo UEFA/Champions. Envie arquivos abertos ao GitHub.
+
+v3.2:
+- Auto atualização visual sem precisar trocar de aba.
+- Botão excluir atleta no cadastro.
+- Coluna do atleta fixa na pontuação.
+- Fotos no ranking.
+- Logo Primo Soccer na tela principal, rankings e impressão.
+
+
+v3.3:
+- P/D e P/E compactos.
+- Sem zoom no iPhone ao editar.
+- Digitação de pontos estável, sem recarregar tabela.
+- Logo substituído pelo enviado.
+
+
+v3.5:
+- Corrigido bug do seletor de atletas voltando para o primeiro jogador.
+- Horário 1 e Horário 2 preservam seleção enquanto edita.
+- Auto atualização não interfere enquanto select/input está em uso.
+
+
+v3.6:
+- Corrigido salvamento da foto do atleta.
+- Foto é compactada antes de salvar para evitar falha no banco/localStorage.
+- Foto aparece no perfil, ranking, pontuação e agenda.
+
+
+v3.7:
+- Mata-mata manual.
+- Escolha a semana em que começa as quartas.
+- Seleção dos 8 classificados.
+- Botão para classificar pelos 8 melhores até a Semana 2.
+- Confrontos: 1º x 8º, 2º x 7º, 3º x 6º, 4º x 5º.
+
+
+v3.8:
+- No link dos atletas (?aluno=1), o Mata-Mata não é editável.
+- Esconde botões, seletores e configurações do Mata-Mata.
+- Alunos veem apenas o chaveamento e pontuação.
+
+
+v3.9:
+- Corrigida opção Copiar mês anterior.
+- Copia somente atletas e horários do mês anterior.
+- Novo mês começa com pontuação zerada.
+- Pontuação do mês anterior permanece salva para o Ranking Anual.
+
+
+v4.0:
+- Agora é possível escolher de qual mês copiar a agenda.
+- Copia atletas e horários para o mês atual.
+- Novos atletas entram com pontuação zerada.
+- Pontos dos meses anteriores continuam salvos no Ranking Anual.

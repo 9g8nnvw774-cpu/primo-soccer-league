@@ -1,0 +1,231 @@
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}body{margin:0;background:radial-gradient(circle at 50% 0,#082ea8 0,#020817 42%,#000 100%);color:#fff;font-family:Arial,Helvetica,sans-serif}.app{max-width:1400px;margin:auto}.hidden{display:none!important}.hero{display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:200px;padding:24px;background:linear-gradient(120deg,#040b28,#09208d,#040b28);border-bottom:1px solid rgba(126,224,255,.3)}.brand{display:flex;align-items:center;gap:16px}.logo{width:86px;height:86px;border-radius:18px;display:grid;place-items:center;background:#fff;color:#06113c;font-weight:900;font-size:28px;border:3px solid #8fdcff}.brand p{margin:0;color:#76e8ff;letter-spacing:3px;font-weight:900}.brand h1{font-size:42px;margin:6px 0 0;text-transform:uppercase}.month-control{background:rgba(0,0,0,.38);border:1px solid #43dfff;border-radius:14px;padding:12px;display:grid;gap:6px}.month-control span{font-size:12px;color:#76e8ff;font-weight:900}.top-nav{position:sticky;top:0;z-index:10;background:#020817;display:grid;grid-template-columns:repeat(10,1fr);border-bottom:1px solid rgba(126,224,255,.25)}.top-nav button{border:0;border-left:1px solid rgba(255,255,255,.08);background:#020817;color:#fff;padding:14px 8px;font-weight:900}.top-nav button.active{background:linear-gradient(#0c3fbf,#06186b);box-shadow:inset 0 -2px #5df2ff}.page{padding:16px}.card{background:linear-gradient(180deg,rgba(8,45,164,.78),rgba(3,10,43,.92));border:1px solid rgba(126,224,255,.25);border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 10px 35px rgba(0,0,0,.3)}.card h2{font-size:28px;margin:0 0 12px;text-transform:uppercase}.sync-status,.student-banner{margin:10px 16px;padding:10px;border-radius:14px;text-align:center;font-weight:900}.sync-status{background:rgba(143,240,179,.11);border:1px solid rgba(143,240,179,.35);color:#8ff0b3}.student-banner{background:rgba(126,224,255,.13);border:1px solid rgba(126,224,255,.35);color:#dff7ff}.form-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px}.assign-grid{grid-template-columns:2fr 1fr 1fr 1fr}.treino-grid{grid-template-columns:2fr 1fr 1fr}input,select,textarea{width:100%;border:1px solid rgba(126,224,255,.35);background:#10233d;color:#fff;border-radius:12px;padding:12px;font-size:16px;min-height:44px}select option{color:#111}button{border:0;border-radius:12px;padding:12px 10px;font-weight:900;color:#071629;background:#dbeafe}.success{background:#8ff0b3!important}.danger{background:#ff8585!important}.secondary{background:#dbeafe!important}.print-btn{background:#ffe082!important}.share-btn{background:#b7a6ff!important}.month-actions,.print-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.week-tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0}.week-tabs button{background:#0e2750;color:#fff}.week-tabs button.active{background:#0b65ff;color:#fff}.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}.league-table{width:100%;min-width:900px;border-collapse:collapse;background:#061334}.league-table th{background:#071c47;color:#eaf7ff;border:1px solid rgba(126,224,255,.18);padding:12px;font-size:12px;text-transform:uppercase}.league-table td{border:1px solid rgba(126,224,255,.14);padding:10px;text-align:center;font-weight:700}.league-table tbody tr:nth-child(odd){background:#071f65}.league-table tbody tr:nth-child(even){background:#05194d}.league-table tbody tr:nth-child(1){background:linear-gradient(90deg,#0b62ff,#0731a4)}.player-cell{display:flex;align-items:center;gap:10px;text-align:left}.avatar,.avatar-placeholder{width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid #7ee0ff;background:#061334;display:grid;place-items:center;color:#7ee0ff;font-weight:900}.photo-input{display:none}.photo-label{cursor:pointer}.id-badge{display:inline-block;color:#7ee0ff;border:1px solid rgba(126,224,255,.35);background:rgba(126,224,255,.1);border-radius:999px;padding:4px 7px;font-size:11px}.actions{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}.stats-btn{background:#b7a6ff!important}.agenda-grid,.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}.grid3 strong{font-size:44px;color:#7ee0ff}.agenda-card{background:#061334;border:1px solid rgba(126,224,255,.25);border-radius:16px;overflow:hidden}.agenda-head{background:#071c47;display:flex;justify-content:space-between;padding:12px;font-weight:900}.badge{background:#7ee0ff;color:#071629;border-radius:999px;padding:5px 8px}.agenda-list{padding:10px;display:grid;gap:8px}.agenda-athlete,.rank-row{display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.07);border-radius:10px;padding:9px}.ranking-list{display:grid;gap:8px}.best-box{margin-top:12px;background:#061334;border-radius:12px;padding:12px;text-align:center;font-weight:900}.bracket-wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}.match{background:#061334;border:1px solid rgba(126,224,255,.25);border-radius:14px;padding:12px}.match h3{margin:0 0 10px;color:#7ee0ff}.bar-track{height:18px;background:rgba(255,255,255,.12);border-radius:999px;overflow:hidden}.bar-fill{height:100%;background:linear-gradient(90deg,#7ee0ff,#8ff0b3)}.modal{position:fixed;inset:0;background:rgba(0,0,0,.83);display:none;align-items:center;justify-content:center;z-index:1000;padding:18px}.modal.open{display:flex}.modal-card{width:min(94vw,760px);max-height:88vh;overflow:auto;background:#061334;border:1px solid #35dcff;border-radius:20px;padding:20px;position:relative}.modal-close{position:absolute;top:8px;right:8px;border-radius:50%;width:36px;height:36px}.modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.print-area{display:none}@media(max-width:850px){.hero{min-height:155px;padding:14px;display:grid}.brand h1{font-size:26px}.logo{width:58px;height:58px}.top-nav{grid-template-columns:repeat(2,1fr);position:relative}.form-grid,.assign-grid,.treino-grid,.month-actions,.print-actions{grid-template-columns:1fr}.card h2{font-size:24px}.page{padding:10px}}body.student-mode .no-student,body.student-mode #tabDashboard,body.student-mode #tabCadastro,body.student-mode #tabAtletas,body.student-mode #tabAgenda,body.student-mode #tabTreinos,body.student-mode #tabPrint,body.student-mode #tabConfig,body.student-mode #pageDashboard,body.student-mode #pageCadastro,body.student-mode #pageAtletas,body.student-mode #pageAgenda,body.student-mode #pageTreinos,body.student-mode #pagePrint,body.student-mode #pageConfig,body.student-mode .sync-status{display:none!important}body.student-mode .top-nav{grid-template-columns:repeat(3,1fr)}@media print{.hero,.top-nav,.sync-status,.student-banner,.page,.modal{display:none!important}.print-area{display:block!important}.print-card{width:108mm;height:192mm;background:#06117a;color:#fff;padding:5mm;overflow:hidden}.print-title{display:flex;gap:10px;border-bottom:1px solid #7ee0ff;padding-bottom:8px;margin-bottom:8px}.print-logo{width:42px;height:42px;border-radius:10px;background:#fff;color:#06117a;display:grid;place-items:center;font-weight:900}.print-card table{width:100%;border-collapse:collapse;font-size:8px}.print-card th,.print-card td{border:1px solid rgba(126,224,255,.35);padding:3px;text-align:center}.print-card th{background:#071c47}}
+
+/* v3.2 ajustes */
+.logo{background:transparent!important;border:0!important;width:96px!important;height:96px!important}
+.logo img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 10px rgba(126,224,255,.45))}
+.logo-small{width:54px;height:54px;object-fit:contain;filter:drop-shadow(0 0 8px rgba(126,224,255,.5))}
+.section-title-logo{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.section-title-logo h2{margin:0}
+
+.league-table th.sticky-athlete,.league-table td.sticky-athlete{
+  position:sticky;left:0;z-index:3;min-width:220px;text-align:left;box-shadow:6px 0 10px rgba(0,0,0,.25)
+}
+.league-table th.sticky-athlete{z-index:4;background:#071c47}
+.league-table td.sticky-athlete{background:#061334}
+.league-table tbody tr:nth-child(odd) td.sticky-athlete{background:#071f65}
+.league-table tbody tr:nth-child(even) td.sticky-athlete{background:#05194d}
+.league-table tbody tr:nth-child(1) td.sticky-athlete{background:#0b62ff}
+
+.rank-row .rank-left{display:flex;align-items:center;gap:10px}
+.rank-row .rank-photo{flex:0 0 auto}
+.rank-row .rank-photo img,.rank-row .rank-photo span{width:36px;height:36px}
+.delete-btn{background:#ff8585!important;color:#071629!important}
+
+@media(max-width:850px){
+  .logo{width:64px!important;height:64px!important}
+  .league-table th.sticky-athlete,.league-table td.sticky-athlete{min-width:190px}
+}
+@media print{
+  .print-logo{background:transparent!important;width:48px!important;height:48px!important}
+  .print-logo img{width:100%;height:100%;object-fit:contain}
+}
+
+
+/* v3.3 compacto P/D e P/E + sem zoom no iPhone */
+.score-input,
+.bonus-select {
+  width: 58px !important;
+  min-width: 58px !important;
+  max-width: 58px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 6px !important;
+  text-align: center !important;
+  font-size: 16px !important; /* impede zoom do iPhone */
+  font-weight: 900 !important;
+  border-radius: 9px !important;
+}
+
+.bonus-select {
+  width: 62px !important;
+  min-width: 62px !important;
+  max-width: 62px !important;
+}
+
+.score-points-table th:nth-child(3),
+.score-points-table th:nth-child(4),
+.score-points-table th:nth-child(5),
+.score-points-table th:nth-child(6),
+.score-points-table td:nth-child(3),
+.score-points-table td:nth-child(4),
+.score-points-table td:nth-child(5),
+.score-points-table td:nth-child(6) {
+  width: 72px !important;
+  min-width: 72px !important;
+  max-width: 72px !important;
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+}
+
+.score-points-table {
+  min-width: 560px !important;
+}
+
+.score-points-table .sticky-athlete {
+  min-width: 190px !important;
+  max-width: 220px !important;
+}
+
+.score-points-table .player-cell strong {
+  font-size: 14px;
+  line-height: 1.05;
+}
+
+.score-points-table .avatar,
+.score-points-table .avatar-placeholder {
+  width: 30px;
+  height: 30px;
+}
+
+input, select, textarea {
+  font-size: 16px !important; /* impede zoom automático no Safari iOS */
+}
+
+.logo img,
+.logo-small,
+.print-logo img {
+  object-fit: contain !important;
+}
+
+@media(max-width:850px){
+  .score-input,
+  .bonus-select {
+    width: 52px !important;
+    min-width: 52px !important;
+    max-width: 52px !important;
+  }
+  .score-points-table th:nth-child(3),
+  .score-points-table th:nth-child(4),
+  .score-points-table th:nth-child(5),
+  .score-points-table th:nth-child(6),
+  .score-points-table td:nth-child(3),
+  .score-points-table td:nth-child(4),
+  .score-points-table td:nth-child(5),
+  .score-points-table td:nth-child(6) {
+    width: 62px !important;
+    min-width: 62px !important;
+    max-width: 62px !important;
+  }
+  .score-points-table {
+    min-width: 500px !important;
+  }
+  .score-points-table .sticky-athlete {
+    min-width: 170px !important;
+  }
+}
+
+.main-title{text-align:center;font-weight:900;font-size:42px}.main-subtitle{text-align:center;font-weight:900;font-size:28px}.month-highlight{text-align:center;font-size:24px;font-weight:900;color:#7ee0ff}
+
+/* v3.7 Mata-mata manual */
+.ko-start-grid {
+  display:grid;
+  grid-template-columns: 1.2fr 1fr 1fr 1fr;
+  gap:8px;
+  margin:12px 0;
+  align-items:end;
+}
+.ko-start-grid label {
+  color:#7ee0ff;
+  font-weight:900;
+  font-size:12px;
+  text-transform:uppercase;
+}
+.ko-start-grid label select {
+  margin-top:6px;
+}
+.ko-selectors {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+}
+.ko-seed {
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(126,224,255,.25);
+  border-radius:12px;
+  padding:10px;
+}
+.ko-seed label {
+  display:block;
+  font-weight:900;
+  color:#7ee0ff;
+  margin-bottom:6px;
+  font-size:12px;
+}
+.match-line {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:8px;
+  background:rgba(255,255,255,.06);
+  border-radius:10px;
+  margin:6px 0;
+}
+.match-line strong { color:#7ee0ff; }
+.ko-stage-label {
+  color:#7ee0ff;
+  font-weight:900;
+  margin:10px 0;
+  text-transform:uppercase;
+  letter-spacing:1px;
+}
+@media(max-width:850px){
+  .ko-start-grid,.ko-selectors { grid-template-columns:1fr; }
+}
+
+
+/* v3.8 - link dos atletas: mata-mata somente visualização */
+body.student-mode .ko-start-grid,
+body.student-mode .ko-selectors,
+body.student-mode #knockoutSelectors,
+body.student-mode #pageKnockout .card:first-child p,
+body.student-mode #pageKnockout .card:first-child .ko-start-grid {
+  display: none !important;
+}
+
+body.student-mode #pageKnockout .card:first-child {
+  padding-bottom: 8px;
+}
+
+body.student-mode #pageKnockout select,
+body.student-mode #pageKnockout button {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+body.student-mode .bracket-wrap {
+  margin-top: 10px;
+}
+
+body.student-mode .match {
+  pointer-events: none;
+}
+
+
+/* v4.0 copiar agenda de qualquer mês */
+.copy-month-select {
+  background:#10233d;
+  color:#fff;
+  border:1px solid rgba(126,224,255,.35);
+  border-radius:12px;
+  padding:12px;
+  font-weight:900;
+}
+.month-actions {
+  grid-template-columns: 1fr 1fr 1fr !important;
+}
+@media(max-width:850px){
+  .month-actions {
+    grid-template-columns: 1fr !important;
+  }
+}

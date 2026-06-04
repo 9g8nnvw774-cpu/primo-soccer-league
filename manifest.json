@@ -1,0 +1,9 @@
+{
+  "name": "Primo Soccer League 2026",
+  "short_name": "Primo League",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "theme_color": "#020a2d",
+  "background_color": "#020a2d"
+}
