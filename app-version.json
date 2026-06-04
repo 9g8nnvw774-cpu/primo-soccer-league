@@ -1,4 +1,4 @@
 {
-  "version": "4.0.0",
-  "message": "Copiar agenda de qualquer mês para o mês atual, com pontos zerados para novos atletas."
+  "version": "4.1.0",
+  "message": "Correção: seletor de mês não volta mais para Janeiro."
 }

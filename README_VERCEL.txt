@@ -53,3 +53,9 @@ v4.0:
 - Copia atletas e horários para o mês atual.
 - Novos atletas entram com pontuação zerada.
 - Pontos dos meses anteriores continuam salvos no Ranking Anual.
+
+
+v4.1:
+- Corrigido bug do mês voltando para Janeiro.
+- O mês selecionado fica salvo corretamente.
+- O seletor não reseta ao renderizar a tela.

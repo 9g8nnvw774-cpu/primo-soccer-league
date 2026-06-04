@@ -12,9 +12,9 @@ function n(v){const x=Number(v);return Number.isFinite(x)?x:0}
 function esc(t){return String(t??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
 function initials(name){return String(name||"A").trim().split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase()||"A"}
 function uid(){return "ATL-"+Date.now().toString(36).toUpperCase()+"-"+Math.random().toString(36).slice(2,6).toUpperCase()}
-function month(){return document.getElementById("monthName")?.value||state.currentMonth||"MAIO"}
-function norm(){if(!state||typeof state!=="object")state=defaultState();if(!Array.isArray(state.athletes))state.athletes=[];if(!state.months)state.months={};state.currentMonth=month();state.schemaVersion=31;state.athletes.forEach(a=>{if(!a.id)a.id=uid();if(!a.identityId)a.identityId=a.id;if(a.active===undefined)a.active=true});if(!state.months[month()])state.months[month()]={participants:{}}}
-function monthObj(m=month()){norm();if(!state.months[m])state.months[m]={participants:{}};return state.months[m]}
+function month(){const el=document.getElementById("monthName");return state.currentMonth || (el&&el.value) || "MAIO"}
+function norm(){if(!state||typeof state!=="object")state=defaultState();if(!Array.isArray(state.athletes))state.athletes=[];if(!state.months)state.months={};if(!state.currentMonth)state.currentMonth="MAIO";state.schemaVersion=31;state.athletes.forEach(a=>{if(!a.id)a.id=uid();if(!a.identityId)a.identityId=a.id;if(a.active===undefined)a.active=true});if(!state.months[month()])state.months[month()]={participants:{}}}
+function monthObj(m=state.currentMonth||month()){norm();if(!state.months[m])state.months[m]={participants:{}};return state.months[m]}
 function idOf(a){return String(a.identityId||a.id)}
 function participant(aOrId,m=month(),create=true){const id=typeof aOrId==="object"?idOf(aOrId):String(aOrId);const mo=monthObj(m);if(!mo.participants[id]&&create)mo.participants[id]={athleteId:id,slots:[],weeks:Array.from({length:5},()=>({}))};return mo.participants[id]||null}
 function slotsOf(a,m=month()){const p=participant(a,m,false);return p&&Array.isArray(p.slots)?p.slots:[]}
@@ -39,7 +39,27 @@ async function saveCloud(){if(!supa)return;try{norm();const {error}=await supa.f
 function cap(p){return {dashboard:"Dashboard",cadastro:"Cadastro",atletas:"Atletas",agenda:"Agenda",treinos:"Treinos",ranking:"Ranking",knockout:"Knockout",year:"Year",print:"Print",config:"Config"}[p]}
 function setPage(p){if(document.body.classList.contains("student-mode")&&!["ranking","knockout","year"].includes(p))p="ranking";["dashboard","cadastro","atletas","agenda","treinos","ranking","knockout","year","print","config"].forEach(x=>{document.getElementById("page"+cap(x))?.classList.toggle("hidden",x!==p);document.getElementById("tab"+cap(x))?.classList.toggle("active",x===p)});renderAll()}
 function renderAll(){norm();renderMonths();renderSlotSelects();renderWeeks();renderDashboard();renderCadastro();renderBankSelect();renderCopyMonthSelect();renderMonthAthletes();renderScore();renderAgenda();renderRanking();renderYear();renderKnockout();document.querySelectorAll(".current-month-label").forEach(e=>e.textContent=month())}
-function renderMonths(){const sel=document.getElementById("monthName");if(sel&&!sel.dataset.ready){sel.innerHTML=MONTHS.map(m=>`<option ${m===state.currentMonth?"selected":""}>${m}</option>`).join("");sel.dataset.ready=1}if(sel){sel.value=state.currentMonth||"MAIO";sel.onchange=()=>{state.currentMonth=sel.value;document.getElementById("heroMonth").textContent=sel.value;norm();scheduleSave();renderAll()}}document.getElementById("heroMonth").textContent=month()}
+function renderMonths(){
+  const sel=document.getElementById("monthName");
+  if(!state.currentMonth) state.currentMonth="MAIO";
+  if(sel && !sel.dataset.ready){
+    sel.innerHTML=MONTHS.map(m=>`<option value="${m}">${m}</option>`).join("");
+    sel.dataset.ready="1";
+    sel.onchange=()=>{
+      state.currentMonth=sel.value;
+      const hero=document.getElementById("heroMonth");
+      if(hero) hero.textContent=state.currentMonth;
+      norm();
+      scheduleSave();
+      renderAll();
+    };
+  }
+  if(sel && sel.value!==state.currentMonth){
+    sel.value=state.currentMonth;
+  }
+  const hero=document.getElementById("heroMonth");
+  if(hero) hero.textContent=state.currentMonth;
+}
 function renderSlotSelects(){
   const keep1=document.getElementById("slot1Select")?.value || "";
   const keep2=document.getElementById("slot2Select")?.value || "";
