@@ -474,21 +474,85 @@ function closeStats(){document.getElementById("statsModal").classList.remove("op
 function generateAthleteLink(){document.getElementById("shareLink").value=location.origin+location.pathname+"?aluno=1";document.getElementById("shareModal").classList.add("open")}
 function closeShareModal(){document.getElementById("shareModal").classList.remove("open")}
 async function copyShareLink(){await navigator.clipboard.writeText(document.getElementById("shareLink").value);alert("Link copiado!")}
-function printRanking(){preparePrint("ranking");window.print()}function printYear(){preparePrint("year");window.print()}function printKnockout(){preparePrint("ko");window.print()}
+
+function printRanking(){preparePrint("ranking");window.print()}
+function printYear(){preparePrint("year");window.print()}
+function printKnockout(){preparePrint("ko");window.print()}
+
+function storyPhotoHtml(a){
+  return a.photo
+    ? `<img class="print-photo" src="${a.photo}">`
+    : `<span class="print-photo-placeholder">${initials(a.name)}</span>`;
+}
+
 function preparePrint(type){
   let title=type==="year"?"TOTAL GERAL DO ANO":type==="ko"?"CHAVEAMENTO MATA-MATA":"CLASSIFICAÇÃO - MÊS: "+month();
-  let html=`<div class="print-card story-print"><div class="print-title compact-print-title"><div class="print-logo"><img src="logo-primo-soccer.png"></div><div><h2>PRIMO SOCCER LEAGUE</h2><h1>${title}</h1></div></div>`;
+
+  let html=`<div class="print-card story-print" id="storyCard">
+    <div class="print-title compact-print-title">
+      <div class="print-logo"><img src="logo-primo-soccer.png"></div>
+      <div>
+        <h2>PRIMO SOCCER LEAGUE</h2>
+        <h1>${title}</h1>
+      </div>
+    </div>`;
+
   if(type==="year"){
     html+=`<table class="print-ranking-table"><tr><th>POS</th><th>FOTO</th><th>ATLETA</th><th>TOTAL</th></tr>`+
-    rankedYear().map((a,i)=>`<tr><td>${i+1}</td><td>${a.photo?`<img class="print-photo" src="${a.photo}">`:`<span class="print-photo-placeholder">${initials(a.name)}</span>`}</td><td>${esc(a.name)}</td><td>${a.year}</td></tr>`).join("")+`</table>`;
-  }else if(type==="ko"){html+=document.getElementById("knockoutContent").innerHTML}
-  else{
+    rankedYear().slice(0,32).map((a,i)=>`<tr><td>${i+1}</td><td>${storyPhotoHtml(a)}</td><td>${esc(a.name)}</td><td>${a.year}</td></tr>`).join("")+`</table>`;
+  }else if(type==="ko"){
+    html+=`<div class="story-ko">${document.getElementById("knockoutContent")?.innerHTML||"<p>Sem chaveamento.</p>"}</div>`;
+  }else{
     html+=`<table class="print-ranking-table"><tr><th>POS</th><th>FOTO</th><th>ATLETA</th><th>PONTOS</th></tr>`+
-    ranked().map((a,i)=>`<tr><td>${i+1}</td><td>${a.photo?`<img class="print-photo" src="${a.photo}">`:`<span class="print-photo-placeholder">${initials(a.name)}</span>`}</td><td>${esc(a.name)}</td><td>${a.total}</td></tr>`).join("")+`</table>`;
+    ranked().slice(0,32).map((a,i)=>`<tr><td>${i+1}</td><td>${storyPhotoHtml(a)}</td><td>${esc(a.name)}</td><td>${a.total}</td></tr>`).join("")+`</table>`;
   }
+
   html+=`</div>`;
   document.getElementById("printContent").innerHTML=html;
 }
+
+async function saveInstagramStory(type){
+  preparePrint(type);
+  const card=document.getElementById("storyCard");
+  if(!card){
+    alert("Não foi possível gerar a arte.");
+    return;
+  }
+
+  document.body.classList.add("exporting-story");
+
+  try{
+    await new Promise(r=>setTimeout(r,250));
+    const canvas=await html2canvas(card,{
+      backgroundColor:null,
+      scale:2,
+      useCORS:true,
+      allowTaint:true,
+      width:1080,
+      height:1920,
+      windowWidth:1080,
+      windowHeight:1920
+    });
+
+    const finalCanvas=document.createElement("canvas");
+    finalCanvas.width=1080;
+    finalCanvas.height=1920;
+    const ctx=finalCanvas.getContext("2d");
+    ctx.drawImage(canvas,0,0,1080,1920);
+
+    const link=document.createElement("a");
+    const label=type==="year"?"anual":type==="ko"?"mata-mata":"ranking";
+    link.download=`primo-soccer-league-${label}-${month().toLowerCase()}.png`;
+    link.href=finalCanvas.toDataURL("image/png");
+    link.click();
+  }catch(e){
+    console.error(e);
+    alert("Erro ao salvar a imagem. Tente novamente.");
+  }finally{
+    document.body.classList.remove("exporting-story");
+  }
+}
+
 function exportCSV(){const rows=[["Atleta","ID","Mês","Total Mês","Total Ano"],...ranked().map(a=>[a.name,idOf(a),month(),a.total,yearTotal(a)])];download("\\uFEFF"+rows.map(r=>r.map(c=>`"${String(c).replaceAll('"','""')}"`).join(";")).join("\\n"),"ranking.csv","text/csv")}
 function download(c,nm,type){const b=new Blob([c],{type}),u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download=nm;a.click();URL.revokeObjectURL(u)}
 async function forceSync(){await saveCloud();await loadCloud()}function reloadOnline(){localStorage.removeItem(STORAGE_KEY);loadCloud()}
