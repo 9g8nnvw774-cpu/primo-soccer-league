@@ -1,0 +1,37 @@
+PRIMO SOCCER LEAGUE 2026 - ADULTO
+
+Este ZIP foi configurado usando o modelo Kids como referência, mas mantendo o projeto Adulto para continuar rodando no mesmo Vercel.
+
+O que foi configurado:
+- Nome do app: PRIMO SOCCER LEAGUE 2026
+- Categoria única: Adulto
+- Agenda adulto com horários e vagas 6/8
+- Pontuação: P/D + P/E + Bônus
+- Ranking mensal e anual adulto
+- Mata-mata com Top 8 até a 2ª semana
+- Confrontos: 1º x 8º, 2º x 7º, 3º x 6º, 4º x 5º
+- Impressão/salvar imagem do ranking e do mata-mata
+- App ID preservado para Adulto: primo_soccer_league_2026_adulto
+
+COMO ATUALIZAR NO MESMO PROJETO DO VERCEL
+
+1. Descompacte este ZIP.
+2. Abra a pasta do projeto que já está conectada no GitHub/Vercel.
+3. Substitua os arquivos antigos por estes arquivos novos.
+4. Mantenha o mesmo repositório do GitHub que o Vercel já usa.
+5. Faça commit e push.
+6. O Vercel vai atualizar automaticamente o mesmo link.
+
+Comandos se estiver usando Git:
+
+git add .
+git commit -m "Configura Primo Soccer League 2026 Adulto"
+git push
+
+Se subir manualmente pelo Vercel:
+- Entre no painel do Vercel
+- Abra o mesmo projeto
+- Faça novo deploy com esta pasta
+
+IMPORTANTE
+Não crie outro projeto no Vercel se quiser manter o mesmo link. Atualize o mesmo repositório/projeto.

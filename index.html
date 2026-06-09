@@ -1,133 +1,192 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<title>Primo Soccer League 2026</title>
-<link rel="manifest" href="manifest.json"/>
-<meta name="theme-color" content="#020a2d"/>
-<link rel="stylesheet" href="style.css"/>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>PRIMO SOCCER LEAGUE 2026</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 <main class="app">
-<header class="hero no-student">
-  <div class="brand"><div class="logo"><img src="logo-primo-soccer.png" alt="Primo Soccer"></div><div><p>PRIMO SOCCER LEAGUE 2026</p><h1>ETAPA: <span id="heroMonth">MAIO</span></h1></div></div>
-  <div class="month-control"><span>MÊS</span><select id="monthName"></select></div>
+<header class="hero officialHero" id="appHero">
+  <div class="officialHeroShade"></div>
+  <div class="officialHeroContent">
+    <img src="primo-logo.png" class="officialLogo" alt="Primo Soccer">
+    <div class="officialTitle">PRIMO SOCCER</div>
+    <div class="officialSubTitle">LEAGUE 2026</div>
+    <div class="officialMonth">MÊS: <span id="heroMonth">MAIO</span></div>
+  </div>
+  <select id="monthSelect" class="officialMonthSelect"></select>
 </header>
 
-<nav class="top-nav no-print">
-<button id="tabDashboard" onclick="setPage('dashboard')" class="active">Dashboard</button>
-<button id="tabCadastro" onclick="setPage('cadastro')">Cadastro</button>
-<button id="tabAtletas" onclick="setPage('atletas')">Atletas</button>
-<button id="tabAgenda" onclick="setPage('agenda')">Agenda</button>
-<button id="tabTreinos" onclick="setPage('treinos')">Treinos</button>
-<button id="tabRanking" onclick="setPage('ranking')">Ranking</button>
-<button id="tabKnockout" onclick="setPage('knockout')">Mata-Mata</button>
-<button id="tabYear" onclick="setPage('year')">Total Anual</button>
-<button id="tabPrint" onclick="setPage('print')">Imprimir</button>
-<button id="tabConfig" onclick="setPage('config')">Config.</button>
+<nav class="tabs">
+  <button id="tab-dashboard" onclick="showPage('dashboard')">Início</button>
+  <button id="tab-cadastro" onclick="showPage('cadastro')">Cadastro</button>
+  <button id="tab-agenda" onclick="showPage('agenda')">Agenda</button>
+  <button id="tab-disputa" onclick="showPage('disputa')">Pontuação</button>
+  <button id="tab-matamata" onclick="showPage('matamata')">Mata-mata</button>
+  <button id="tab-ranking" onclick="showPage('ranking')">Ranking</button>
+  <button id="tab-imprimir" onclick="showPage('imprimir')">Imprimir</button>
+  <button id="tab-config" onclick="showPage('config')">Config</button>
 </nav>
 
-<div id="syncStatus" class="sync-status no-print">Carregando banco online...</div>
-<div id="studentBanner" class="student-banner hidden no-print">Modo atletas: Ranking, Mata-Mata e Total Anual</div>
+<div id="syncStatus" class="sync">Conectando ao banco online...</div>
 
-<section id="pageDashboard" class="page">
-<div class="grid3">
- <div class="card"><h2>Ativos no mês</h2><strong id="dashActive">0</strong></div>
- <div class="card"><h2>Pontos do mês</h2><strong id="dashMonthPoints">0</strong></div>
- <div class="card"><h2>Banco de atletas</h2><strong id="dashBank">0</strong></div>
-</div>
-<div class="card"><h2>Melhor do mês</h2><div id="dashBest">-</div></div>
-</section>
-
-<section id="pageCadastro" class="page hidden">
-<div class="card"><h2>Cadastro de Atletas</h2><p>Cada atleta recebe um ID fixo e fica salvo no banco.</p>
-<div class="form-grid"><input id="athleteNameInput" placeholder="Nome do atleta"><input id="athleteAgeInput" placeholder="Idade" type="number"><button onclick="createAthlete()" class="success">Cadastrar</button></div></div>
-<div class="card"><h2>Banco de Atletas</h2><div class="table-wrap"><table class="league-table"><thead><tr><th>POS</th><th>FOTO</th><th>ATLETA</th><th>IDADE</th><th>ID FIXO</th><th>TOTAL ANO</th><th>AÇÕES</th></tr></thead><tbody id="athleteBankBody"></tbody></table></div></div>
-</section>
-
-<section id="pageAtletas" class="page hidden">
-<div class="card"><h2>Atletas da disputa do mês</h2><p>Selecione atletas do banco e defina os horários que vão pontuar neste mês.</p>
-<div class="form-grid assign-grid"><select id="bankSelect"></select><select id="slot1Select"></select><select id="slot2Select"></select><button onclick="addAthleteToMonth()" class="success">Adicionar ao mês</button></div>
-<div class="month-actions"><select id="copyFromMonthSelect" class="copy-month-select"></select><button onclick="copyMonthAgenda()" class="secondary">Copiar agenda do mês escolhido</button><button onclick="clearMonthSchedule()" class="danger">Limpar agenda do mês</button></div></div>
-<div class="card"><h2>Escalação do mês</h2><div class="table-wrap"><table class="league-table"><thead><tr><th>POS</th><th>FOTO</th><th>ATLETA</th><th>HORÁRIO 1</th><th>HORÁRIO 2</th><th>PTS MÊS</th><th>AÇÕES</th></tr></thead><tbody id="monthAthletesBody"></tbody></table></div></div>
-</section>
-
-<section id="pageAgenda" class="page hidden">
-<div class="card"><h2>Agenda do mês</h2><p>Copie a agenda de qualquer mês sem copiar pontuação.</p>
-<div class="month-actions"><select id="copyFromMonthSelectAgenda" class="copy-month-select"></select><button onclick="copyMonthAgendaFromAgenda()" class="secondary">Copiar agenda do mês escolhido</button></div></div>
-<div id="agendaGrid" class="agenda-grid"></div></section>
-
-<section id="pageTreinos" class="page hidden">
-<div class="card"><h2>Pontuação</h2><div class="form-grid treino-grid"><select id="sessionSlot"></select><button onclick="clearCurrentSession()" class="secondary">Limpar horário</button><button onclick="exportCSV()" class="success">Exportar CSV</button></div><nav id="weekTabs" class="week-tabs"></nav></div>
-<div class="card"><h2 id="sessionTitle">Pontuação</h2><div class="table-wrap"><table class="league-table score-points-table"><thead><tr><th>POS</th><th class="sticky-athlete">ATLETA</th><th>P/D</th><th>P/E</th><th>BÔNUS</th><th>TOTAL</th></tr></thead><tbody id="scoreBody"></tbody></table></div><div id="bestWeekBox" class="best-box"></div></div>
-</section>
-
-<section id="pageRanking" class="page hidden"><div class="card"><div class="section-title-logo"><img src="logo-primo-soccer.png" class="logo-small"><h2>Ranking Pontuador - <span class="current-month-label">MAIO</span></h2></div><div id="rankingList" class="ranking-list"></div></div></section>
-<section id="pageKnockout" class="page hidden">
-<div class="card">
-  <div class="section-title-logo"><img src="logo-primo-soccer.png" class="logo-small"><h2>Chaveamento Mata-Mata</h2></div>
-  <p>Escolha em qual semana começa o mata-mata e selecione os 8 classificados. Você pode preencher automaticamente pelo ranking acumulado até a Semana 2.</p>
-
-  <div class="ko-start-grid no-print">
-    <label>
-      Início do Mata-Mata
-      <select id="koStartWeek" onchange="setKnockoutStartWeek(this.value)">
-        <option value="2">Semana 3 - Quartas de finais</option>
-        <option value="1">Semana 2 - Quartas de finais</option>
-        <option value="3">Semana 4 - Quartas de finais</option>
-      </select>
-    </label>
-    <button onclick="fillKnockoutFromWeek2()" class="success">Classificar 8 melhores até Semana 2</button>
-    <button onclick="saveKnockoutManual()" class="secondary">Salvar classificados</button>
-    <button onclick="clearKnockoutManual()" class="danger">Limpar mata-mata</button>
-  </div>
-
-  <div id="knockoutSelectors" class="ko-selectors"></div>
-</div>
-<div id="knockoutContent" class="bracket-wrap"></div>
-</section>
-<section id="pageYear" class="page hidden"><div class="card"><div class="section-title-logo"><img src="logo-primo-soccer.png" class="logo-small"><h2>Total Geral do Ano</h2></div><div class="table-wrap"><table class="league-table annual-table"><thead><tr><th>POS</th><th>ATLETA</th><th>JAN</th><th>FEV</th><th>MAR</th><th>ABR</th><th>MAI</th><th>JUN</th><th>JUL</th><th>AGO</th><th>SET</th><th>OUT</th><th>NOV</th><th>DEZ</th><th>TOTAL</th></tr></thead><tbody id="yearBody"></tbody></table></div></div></section>
-<section id="pagePrint" class="page hidden">
+<section id="page-dashboard" class="page">
   <div class="card">
-    <h2>Impressões e imagens para Instagram</h2>
-    <div class="print-actions">
-      <button onclick="printRanking()" class="print-btn">Imprimir Pontuação</button>
-      <button onclick="printYear()" class="print-btn">Imprimir Total Anual</button>
-      <button onclick="printKnockout()" class="print-btn">Imprimir Mata-Mata</button>
-      <button onclick="saveInstagramStory('ranking')" class="story-btn">Salvar Ranking 1080x1920</button>
-      <button onclick="saveInstagramStory('year')" class="story-btn">Salvar Anual 1080x1920</button>
-      <button onclick="saveInstagramStory('ko')" class="story-btn">Salvar Mata-Mata 1080x1920</button>
-      <button onclick="generateAthleteLink()" class="share-btn">Link atletas</button>
+    <h2>PRIMO SOCCER LEAGUE 2026</h2>
+    <p>Categoria única: <strong>Adulto</strong>. Cadastre atletas, organize a agenda, lance a pontuação semanal e gere o mata-mata após a 2ª semana.</p>
+    <div id="categoryButtons" class="categoryButtons"></div>
+  </div>
+  <div class="grid3">
+    <div class="card mini"><h3>Ativos no mês</h3><strong id="dashActive">0</strong></div>
+    <div class="card mini"><h3>Cadastrados</h3><strong id="dashBank">0</strong></div>
+    <div class="card mini"><h3>Pontos do mês</h3><strong id="dashPoints">0</strong></div>
+  </div>
+</section>
+
+<section id="page-cadastro" class="page hidden">
+  <div class="card">
+    <h2>Cadastro de Atleta Adulto</h2>
+    <div class="form">
+      <input id="studentName" placeholder="Nome do atleta">
+      <input id="studentBirth" type="date">
+      <select id="studentCategory" style="display:none"></select>
+      <button onclick="addStudent()" class="success">Cadastrar</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Atletas cadastrados</h2>
+    <div class="tableWrap">
+      <table>
+        <thead><tr><th>#</th><th>Foto</th><th>Nome</th><th>Nascimento</th><th>Idade</th><th>Categoria</th><th>Ações</th></tr></thead>
+        <tbody id="studentsTable"></tbody>
+      </table>
     </div>
   </div>
 </section>
-<section id="pageConfig" class="page hidden"><div class="card"><h2>Configurações</h2><button onclick="forceSync()" class="success">Sincronizar agora</button><button onclick="reloadOnline()" class="secondary">Recarregar online</button><button onclick="limparAppCache()" class="danger">Limpar cache do app</button><p>v4.2 • Agenda + Foto + Story completo</p></div></section>
 
-<section class="print-area" id="storyExportArea"><div id="printContent"></div></section>
-</main>
-<div id="statsModal" class="modal no-print"><div class="modal-card"><button onclick="closeStats()" class="modal-close">×</button><div id="statsContent"></div></div></div>
-<div id="shareModal" class="modal no-print"><div class="modal-card"><h2>Link dos atletas</h2><textarea id="shareLink" readonly></textarea><div class="modal-actions"><button onclick="copyShareLink()" class="success">Copiar</button><button onclick="closeShareModal()" class="danger">Fechar</button></div></div></div>
-<div id="photoViewModal" class="modal photo-view-modal no-print" onclick="closePhotoView()">
-  <div class="photo-view-card" onclick="event.stopPropagation()">
-    <button class="modal-close" onclick="closePhotoView()">×</button>
-    <img id="photoViewImg" alt="Foto do atleta">
-  </div>
-</div>
-<div id="photoCropModal" class="modal photo-crop-modal no-print">
-  <div class="modal-card crop-card">
-    <button class="modal-close" onclick="cancelPhotoCrop()">×</button>
-    <h2>Ajustar foto do atleta</h2>
-    <p>Use o zoom e arraste a imagem para enquadrar o rosto.</p>
-    <canvas id="photoCropCanvas" width="420" height="420"></canvas>
-    <label>Zoom <input id="photoZoomRange" type="range" min="1" max="3" step="0.01" value="1" oninput="updatePhotoZoom(this.value)"></label>
-    <div class="modal-actions">
-      <button onclick="saveCroppedPhoto()" class="success">Salvar foto</button>
-      <button onclick="cancelPhotoCrop()" class="danger">Cancelar</button>
+<section id="page-agenda" class="page hidden">
+  <div class="card">
+    <h2>Agenda Adulto</h2>
+    <div class="categoryTop">
+      <strong class="leagueBadge">Categoria: Adulto</strong>
+      <button onclick="showPage('disputa')" class="success">Ir para pontuação</button>
+    </div>
+    <p>Selecione um aluno e coloque no horário. Organize os atletas por horário. Horários adultos têm 6 ou 8 vagas conforme configuração.</p>
+    <div class="form agendaForm">
+      <select id="studentPicker"></select>
+      <select id="schedulePicker"></select>
+      <button onclick="addToSchedule()" class="success">Adicionar no horário</button>
+    </div>
+    <div class="form agendaForm">
+      <select id="copyMonthPicker"></select>
+      <button onclick="copyAgendaFromMonth()" class="secondary">Copiar mês escolhido</button>
+      <button onclick="clearCategoryAgenda()" class="danger">Limpar agenda categoria</button>
     </div>
   </div>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <div id="agendaGrid" class="gridCards"></div>
+</section>
+
+<section id="page-disputa" class="page hidden">
+  <div class="card">
+    <h2>Pontuação Adulto</h2>
+    <div class="categoryTop">
+      <strong class="leagueBadge">Categoria: Adulto</strong>
+      <button onclick="showPage('agenda')" class="secondary">Organizar agenda</button>
+    </div>
+    <div class="form scoreControls">
+      <select id="scoreSchedule"></select>
+      <select id="scoreWeek"></select>
+      <button onclick="clearTrainingScore()" class="danger">Limpar treino</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2 id="scoreTitle">Pontuação</h2>
+    <p>Os atletas aparecem automaticamente conforme o horário selecionado na agenda.</p>
+    <div class="tableWrap">
+      <table class="scoreTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th class="sticky">Aluno</th>
+            <th>P/D</th>
+            <th>P/E</th>
+            <th>Bônus</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody id="scoreTable"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Ranking Adulto</h2>
+    <div id="categoryRanking" class="rankList"></div>
+  </div>
+</section>
+
+<section id="page-matamata" class="page hidden">
+  <div class="card">
+    <h2>Campeonato Eliminatório</h2>
+    <p>Os 8 melhores classificados somando as semanas 1 e 2 entram automaticamente nas quartas de final: 1º x 8º, 2º x 7º, 3º x 6º e 4º x 5º.</p>
+    <div class="form agendaForm">
+      <button onclick="generatePlayoffs()" class="success">Gerar quartas com top 8</button>
+      <button onclick="resetPlayoffs()" class="danger">Resetar mata-mata</button>
+      <button onclick="preparePrint('playoffs')" class="secondary">Gerar imagem do mata-mata</button>
+    </div>
+  </div>
+  <div id="playoffArea" class="playoffGrid"></div>
+</section>
+
+<section id="page-ranking" class="page hidden">
+  <div class="card">
+    <h2>Ranking Adulto</h2>
+    <div id="rankingGeneral" class="rankList"></div>
+  </div>
+  <div id="allCategoryRankings" class="gridCards"></div>
+</section>
+
+<section id="page-imprimir" class="page hidden">
+  <div class="card noPrint">
+    <h2>Impressão Instagram 1080x1920</h2>
+    <select id="printCategory" style="display:none"></select>
+    <button onclick="preparePrint('category')" class="success">Gerar ranking adulto</button>
+    <button onclick="preparePrint('annual')" class="secondary">Gerar ranking anual adulto</button>
+    <button onclick="preparePrint('playoffs')" class="secondary">Gerar mata-mata</button>
+    <button onclick="window.print()" class="success">Imprimir / Salvar imagem</button>
+  </div>
+  <div id="printArea" class="printArea"></div>
+</section>
+
+
+<section id="page-pais" class="page hidden parentOnlyPage">
+  <div class="card parentHeader">
+    <img src="primo-logo.png" class="parentLogo" alt="Primo Soccer">
+    <h2>PRIMO SOCCER LEAGUE 2026</h2>
+    <p>Ranking Adulto — MÊS: <strong id="parentMonth">MAIO</strong></p>
+    <div id="parentCategoryTabs" class="parentTabs"></div>
+  </div>
+  <div id="parentRankingArea"></div>
+</section>
+
+<section id="page-config" class="page hidden">
+  <div class="card">
+    <h2>Configurações</h2>
+    <button onclick="syncNow()" class="success">Sincronizar agora</button>
+    <button onclick="loadCloud()" class="secondary">Recarregar online</button><button onclick="copyParentLink()" class="success">Copiar link dos pais</button>
+      <hr class="softLine">
+      <h3>Capa do Dashboard</h3>
+      <p class="smallText">Envie uma imagem pronta de capa. O app não vai escrever textos por cima da sua arte, apenas mostra o seletor do mês abaixo.</p>
+      <input id="coverUpload" type="file" accept="image/*" onchange="uploadCover(event)">
+      <button onclick="clearCover()" class="danger">Remover capa personalizada</button><p id="parentLinkText" class="smallText"></p>
+    <p><strong>Versão:</strong> Adulto League 2026 • Ranking anual + mata-mata top 8</p>
+    <p><strong>App ID:</strong> primo_soccer_league_2026_adulto</p>
+  </div>
+</section>
+</main>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="script.js"></script>
