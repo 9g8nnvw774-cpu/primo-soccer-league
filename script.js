@@ -2,7 +2,7 @@ const SUPABASE_URL="https://edsryflpvspwtcaahvhy.supabase.co";
 const SUPABASE_KEY="sb_publishable_gtql54XF2okza9t0uZH6Yg_28oX6YNz";
 const APP_ID="primo_soccer_league_2026";
 const STORAGE_KEY="primo_league_state_v31";
-const SELECTED_MONTH_KEY="primo_league_selected_month_v4";
+const SELECTED_MONTH_KEY="primo_league_selected_month_v41";
 const MONTHS=["JANEIRO","FEVEREIRO","MARÇO","ABRIL","MAIO","JUNHO","JULHO","AGOSTO","SETEMBRO","OUTUBRO","NOVEMBRO","DEZEMBRO"];
 const slotData=[{name:"Segunda 19:30",vagas:8},{name:"Terça 11:30",vagas:6},{name:"Terça 18:30",vagas:6},{name:"Terça 19:30",vagas:8},{name:"Quarta 19:30",vagas:8},{name:"Quinta 11:30",vagas:6},{name:"Quinta 18:30",vagas:6},{name:"Quinta 19:30",vagas:8}];
 const slots=slotData.map(s=>s.name);
@@ -13,8 +13,23 @@ function n(v){const x=Number(v);return Number.isFinite(x)?x:0}
 function esc(t){return String(t??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
 function initials(name){return String(name||"A").trim().split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase()||"A"}
 function uid(){return "ATL-"+Date.now().toString(36).toUpperCase()+"-"+Math.random().toString(36).slice(2,6).toUpperCase()}
-function month(){return localStorage.getItem(SELECTED_MONTH_KEY)||state.currentMonth||"MAIO"}
-function norm(){if(!state||typeof state!=="object")state=defaultState();if(!Array.isArray(state.athletes))state.athletes=[];if(!state.months)state.months={};const savedMonth=localStorage.getItem(SELECTED_MONTH_KEY);if(savedMonth&&MONTHS.includes(savedMonth))state.currentMonth=savedMonth;if(!state.currentMonth)state.currentMonth="MAIO";state.schemaVersion=31;state.athletes.forEach(a=>{if(!a.id)a.id=uid();if(!a.identityId)a.identityId=a.id;if(a.active===undefined)a.active=true});if(!state.months[month()])state.months[month()]={participants:{}}}
+function month(){
+  const st=state?.currentMonth;
+  if(st&&MONTHS.includes(st))return st;
+  const saved=localStorage.getItem(SELECTED_MONTH_KEY);
+  if(saved&&MONTHS.includes(saved))return saved;
+  return "MAIO";
+}
+function norm(){
+  if(!state||typeof state!=="object")state=defaultState();
+  if(!Array.isArray(state.athletes))state.athletes=[];
+  if(!state.months)state.months={};
+  const saved=localStorage.getItem(SELECTED_MONTH_KEY);
+  if(state.currentMonth&&MONTHS.includes(state.currentMonth)){}else if(saved&&MONTHS.includes(saved))state.currentMonth=saved;else state.currentMonth="MAIO";
+  state.schemaVersion=41;
+  state.athletes.forEach(a=>{if(!a.id)a.id=uid();if(!a.identityId)a.identityId=a.id;if(a.active===undefined)a.active=true});
+  if(!state.months[state.currentMonth])state.months[state.currentMonth]={participants:{}};
+}
 function monthObj(m=state.currentMonth||month()){norm();if(!state.months[m])state.months[m]={participants:{}};return state.months[m]}
 function idOf(a){return String(a.identityId||a.id)}
 function participant(aOrId,m=month(),create=true){const id=typeof aOrId==="object"?idOf(aOrId):String(aOrId);const mo=monthObj(m);if(!mo.participants[id]&&create)mo.participants[id]={athleteId:id,slots:[],weeks:Array.from({length:5},()=>({}))};return mo.participants[id]||null}
@@ -31,40 +46,44 @@ function yearTotal(a){const id=idOf(a);return Object.keys(state.months||{}).redu
 function activeAthletes(m=month()){const ids=new Set(Object.entries(monthObj(m).participants||{}).filter(([id,p])=>p?.slots?.length).map(([id])=>id));return state.athletes.filter(a=>a.active!==false&&ids.has(idOf(a)))}
 function ranked(){return activeAthletes().map(a=>({...a,total:monthTotal(a),weekTotals:[0,1,2,3,4].map(i=>weekTotal(a,i))})).sort((a,b)=>b.total-a.total||a.name.localeCompare(b.name))}
 function rankedYear(){return state.athletes.filter(a=>a.active!==false).map(a=>({...a,year:yearTotal(a),current:monthTotal(a)})).sort((a,b)=>b.year-a.year||a.name.localeCompare(b.name))}
-function saveLocal(){norm();if(state.currentMonth)localStorage.setItem(SELECTED_MONTH_KEY,state.currentMonth);localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
+function saveLocal(){
+  if(state?.currentMonth&&MONTHS.includes(state.currentMonth))localStorage.setItem(SELECTED_MONTH_KEY,state.currentMonth);
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+}
 function scheduleSave(){saveLocal();clearTimeout(saveTimer);saveTimer=setTimeout(saveCloud,600)}
 function setSync(msg,type="warn"){const el=document.getElementById("syncStatus");if(el){el.textContent=msg;el.style.color=type==="ok"?"#8ff0b3":type==="error"?"#ff8b8b":"#ffe082"}}
 async function initCloud(){try{supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);await loadCloud()}catch(e){setSync("Erro Supabase: "+e.message,"error")}}
-async function loadCloud(){try{ if(photoUploadInProgress)return;const {data,error}=await supa.from("primo_app_state").select("data").eq("app_id",APP_ID).maybeSingle();if(error)throw error;if(data?.data){const chosen=localStorage.getItem(SELECTED_MONTH_KEY)||state.currentMonth;state=data.data;if(chosen&&MONTHS.includes(chosen)){state.currentMonth=chosen;localStorage.setItem(SELECTED_MONTH_KEY,chosen)}norm();saveLocal();setSync("Dados online carregados.","ok")}else await saveCloud();renderAll()}catch(e){setSync("Erro ao carregar online. Execute o SQL.","error");console.error(e)}}
+async function loadCloud(){
+  try{
+    if(photoUploadInProgress)return;
+    const chosen=state?.currentMonth||localStorage.getItem(SELECTED_MONTH_KEY)||"MAIO";
+    const {data,error}=await supa.from("primo_app_state").select("data").eq("app_id",APP_ID).maybeSingle();
+    if(error)throw error;
+    if(data?.data){
+      state=data.data;
+      if(chosen&&MONTHS.includes(chosen)){state.currentMonth=chosen;localStorage.setItem(SELECTED_MONTH_KEY,chosen)}
+      norm();saveLocal();setSync("Dados online carregados.","ok");
+    }else await saveCloud();
+    renderAll();
+  }catch(e){setSync("Erro ao carregar online. Execute o SQL.","error");console.error(e)}
+}
 async function saveCloud(){if(!supa)return;try{norm();const {error}=await supa.from("primo_app_state").upsert({app_id:APP_ID,data:state,updated_at:new Date().toISOString()},{onConflict:"app_id"});if(error)throw error;setSync("Dados salvos online.","ok"); if(!document.activeElement || !["INPUT","SELECT","TEXTAREA"].includes(document.activeElement.tagName)) renderAll()}catch(e){setSync("Erro ao salvar online.","error");console.error(e)}}
 function cap(p){return {dashboard:"Dashboard",cadastro:"Cadastro",atletas:"Atletas",agenda:"Agenda",treinos:"Treinos",ranking:"Ranking",knockout:"Knockout",year:"Year",print:"Print",config:"Config"}[p]}
 function setPage(p){if(document.body.classList.contains("student-mode")&&!["ranking","knockout","year"].includes(p))p="ranking";["dashboard","cadastro","atletas","agenda","treinos","ranking","knockout","year","print","config"].forEach(x=>{document.getElementById("page"+cap(x))?.classList.toggle("hidden",x!==p);document.getElementById("tab"+cap(x))?.classList.toggle("active",x===p)});renderAll()}
 function renderAll(){norm();renderMonths();renderSlotSelects();renderWeeks();renderDashboard();renderCadastro();renderBankSelect();renderCopyMonthSelect();renderMonthAthletes();renderScore();renderAgenda();renderRanking();renderYear();renderKnockout();document.querySelectorAll(".current-month-label").forEach(e=>e.textContent=month())}
 function renderMonths(){
   const sel=document.getElementById("monthName");
-  const saved=localStorage.getItem(SELECTED_MONTH_KEY);
-  if(saved && MONTHS.includes(saved)) state.currentMonth=saved;
-  if(!state.currentMonth || !MONTHS.includes(state.currentMonth)) state.currentMonth="MAIO";
-
-  if(sel && !sel.dataset.ready){
+  if(!state.currentMonth||!MONTHS.includes(state.currentMonth)){
+    const saved=localStorage.getItem(SELECTED_MONTH_KEY);
+    state.currentMonth=(saved&&MONTHS.includes(saved))?saved:"MAIO";
+  }
+  if(sel&&!sel.dataset.ready){
     sel.innerHTML=MONTHS.map(m=>`<option value="${m}">${m}</option>`).join("");
     sel.dataset.ready="1";
-    sel.onchange=()=>{
-      const chosen=sel.value;
-      state.currentMonth=chosen;
-      localStorage.setItem(SELECTED_MONTH_KEY, chosen);
-      const hero=document.getElementById("heroMonth");
-      if(hero) hero.textContent=chosen;
-      norm();
-      scheduleSave();
-      renderAll();
-    };
+    sel.onchange=()=>{const chosen=sel.value;if(!MONTHS.includes(chosen))return;state.currentMonth=chosen;localStorage.setItem(SELECTED_MONTH_KEY,chosen);if(!state.months[chosen])state.months[chosen]={participants:{}};const hero=document.getElementById("heroMonth");if(hero)hero.textContent=chosen;saveLocal();renderAll();scheduleSave()};
   }
-
-  if(sel) sel.value=state.currentMonth;
-
-  const hero=document.getElementById("heroMonth");
-  if(hero) hero.textContent=state.currentMonth;
+  if(sel&&sel.value!==state.currentMonth)sel.value=state.currentMonth;
+  const hero=document.getElementById("heroMonth");if(hero)hero.textContent=state.currentMonth;
 }
 function renderSlotSelects(){
   const keep1=document.getElementById("slot1Select")?.value || "";
@@ -94,24 +113,14 @@ function photoHtml(a){
 }
 
 let cropPhotoState=null;
-
 function loadPhoto(e,id){
   photoUploadInProgress=true;
-  const f=e.target.files && e.target.files[0];
-  if(!f){photoUploadInProgress=false;return;}
-
+  const f=e.target.files&&e.target.files[0];
+  if(!f){photoUploadInProgress=false;return}
   const reader=new FileReader();
-  reader.onload=()=>{
-    const img=new Image();
-    img.onload=()=>{
-      cropPhotoState={id:String(id),img,zoom:1,offsetX:0,offsetY:0,dragging:false,lastX:0,lastY:0};
-      openPhotoCropModal();
-    };
-    img.src=reader.result;
-  };
+  reader.onload=()=>{const img=new Image();img.onload=()=>{cropPhotoState={id:String(id),img,zoom:1,offsetX:0,offsetY:0,dragging:false,lastX:0,lastY:0};openPhotoCropModal()};img.src=reader.result};
   reader.readAsDataURL(f);
 }
-
 function createAthlete(){const name=document.getElementById("athleteNameInput").value.trim();const age=document.getElementById("athleteAgeInput").value.trim();if(!name)return alert("Digite o nome do atleta.");const a={id:uid(),identityId:"",name,age,photo:"",active:true,createdAt:new Date().toISOString()};a.identityId=a.id;state.athletes.push(a);document.getElementById("athleteNameInput").value="";document.getElementById("athleteAgeInput").value="";scheduleSave();renderAll();alert("Atleta cadastrado!")}
 function renderCadastro(){const body=document.getElementById("athleteBankBody");if(!body)return;body.innerHTML=state.athletes.filter(a=>a.active!==false).map((a,i)=>`<tr><td>${i+1}</td><td>${photoHtml(a)}</td><td><input value="${esc(a.name)}" oninput="editAthlete('${idOf(a)}','name',this.value)"></td><td><input value="${esc(a.age||'')}" oninput="editAthlete('${idOf(a)}','age',this.value)"></td><td><span class="id-badge">${idOf(a)}</span></td><td><strong>${yearTotal(a)}</strong></td><td><div class="actions"><button class="success" onclick="quickAdd('${idOf(a)}')">Selecionar</button><button class="stats-btn" onclick="openStats('${idOf(a)}')">Stats</button><button class="delete-btn" onclick="deleteAthleteFull('${idOf(a)}')">Excluir</button></div></td></tr>`).join("")||'<tr><td colspan="7">Nenhum atleta cadastrado.</td></tr>'}
 function editAthlete(id,field,value){const a=state.athletes.find(x=>idOf(x)===id);if(a){a[field]=value;scheduleSave();renderBankSelect()}}
@@ -150,58 +159,16 @@ function renderCopyMonthSelect(){
 }
 
 function copyMonthAgenda(){
-  norm();
-  const sel=document.getElementById("copyFromMonthSelect");
-  const sourceMonth=sel ? sel.value : "";
-  const targetMonth=month();
-
-  if(!sourceMonth){
-    alert("Nenhum mês anterior com atletas na agenda foi encontrado.");
-    return;
-  }
-
-  if(sourceMonth===targetMonth){
-    alert("Escolha um mês diferente do mês atual.");
-    return;
-  }
-
-  const source=monthObj(sourceMonth);
-  const target=monthObj(targetMonth);
-
-  const entries=Object.entries(source.participants||{})
-    .filter(([id,p])=>p && Array.isArray(p.slots) && p.slots.length);
-
-  if(!entries.length){
-    alert("Esse mês não possui atletas com horários para copiar.");
-    return;
-  }
-
-  if(!confirm(`Copiar ${entries.length} atleta(s) e horários de ${sourceMonth} para ${targetMonth}? O novo mês começará com pontuação zerada.`)){
-    return;
-  }
-
-  // Preserva pontos já existentes do mês atual se o atleta já tiver pontuação,
-  // mas atualiza horários. Para novos atletas no mês, cria semanas zeradas.
-  entries.forEach(([id,p])=>{
-    if(!target.participants[id]){
-      target.participants[id]={
-        athleteId:id,
-        slots:[...(p.slots||[])],
-        weeks:Array.from({length:5},()=>({}))
-      };
-    }else{
-      target.participants[id].slots=[...(p.slots||[])];
-      if(!Array.isArray(target.participants[id].weeks)){
-        target.participants[id].weeks=Array.from({length:5},()=>({}));
-      }
-    }
-  });
-
-  scheduleSave();
-  renderAll();
-  alert(`Agenda de ${sourceMonth} copiada para ${targetMonth}. Pontuação do novo mês ficou zerada para novos atletas.`);
+  const targetMonth=month(),sel=document.getElementById("copyFromMonthSelect"),sourceMonth=sel?sel.value:"";
+  if(!sourceMonth){alert("Nenhum mês com agenda foi encontrado para copiar.");return}
+  if(sourceMonth===targetMonth){alert("Escolha um mês diferente do mês atual.");return}
+  const source=monthObj(sourceMonth),target=monthObj(targetMonth);
+  const entries=Object.entries(source.participants||{}).filter(([id,p])=>p&&Array.isArray(p.slots)&&p.slots.length);
+  if(!entries.length){alert("Esse mês não possui atletas com horários para copiar.");return}
+  if(!confirm(`Copiar agenda de ${sourceMonth} para ${targetMonth}? A pontuação não será copiada.`))return;
+  entries.forEach(([id,p])=>{if(!target.participants[id])target.participants[id]={athleteId:id,slots:[...(p.slots||[])],weeks:Array.from({length:5},()=>({}))};else{target.participants[id].slots=[...(p.slots||[])];if(!Array.isArray(target.participants[id].weeks))target.participants[id].weeks=Array.from({length:5},()=>({}))}});
+  state.currentMonth=targetMonth;localStorage.setItem(SELECTED_MONTH_KEY,targetMonth);saveLocal();scheduleSave();renderAll();const monthSel=document.getElementById("monthName");if(monthSel)monthSel.value=targetMonth;alert(`Agenda de ${sourceMonth} copiada para ${targetMonth}.`);
 }
-
 // Mantém compatibilidade com o botão antigo, caso ainda exista em cache.
 function copyPreviousMonth(){
   renderCopyMonthSelect();
@@ -268,11 +235,9 @@ function setScore(id,sl,field,val,el){const a=state.athletes.find(x=>idOf(x)===i
 function clearCurrentSession(){const sl=document.getElementById("sessionSlot").value;if(!confirm("Limpar este horário?"))return;activeAthletes().forEach(a=>{const w=weeksOf(a);if(w[currentWeek]?.[sl])w[currentWeek][sl]=emptyScore()});scheduleSave();renderAll()}
 function renderAgenda(){const grid=document.getElementById("agendaGrid");if(!grid)return;grid.innerHTML=slotData.map(slot=>{const list=activeAthletes().filter(a=>slotsOf(a).includes(slot.name));return `<div class="agenda-card"><div class="agenda-head"><strong>${slot.name}</strong><span class="badge">${list.length}/${slot.vagas}</span></div><div class="agenda-list">${list.map(a=>`<div class="agenda-athlete"><span>${esc(a.name)}</span><strong>${monthTotal(a)} pts</strong></div>`).join("")||"<div>Nenhum atleta</div>"}</div></div>`}).join("")}
 function renderRanking(){
-  const el=document.getElementById("rankingList");
-  if(!el)return;
+  const el=document.getElementById("rankingList");if(!el)return;
   el.innerHTML=ranked().map((a,i)=>`<div class="rank-row"><div class="rank-left"><span>${i===0?"🥇":i===1?"🥈":i===2?"🥉":"⚽"}</span><span class="rank-photo">${a.photo?`<img src="${a.photo}" class="avatar" onclick="openPhotoView('${a.photo}')">`:`<span class="avatar-placeholder">${initials(a.name)}</span>`}</span><span>${i+1}º - ${esc(a.name)}</span></div><strong>${a.total} pts</strong></div>`).join("")||"<div>Nenhum atleta ativo.</div>";
 }
-
 function renderYear(){const body=document.getElementById("yearBody");if(!body)return;body.innerHTML=rankedYear().map((a,i)=>`<tr><td>${i+1}</td><td>${esc(a.name)}</td>${MONTHS.map(m=>`<td>${monthTotalById(idOf(a),m)||"-"}</td>`).join("")}<td><strong>${a.year}</strong></td></tr>`).join("")}
 
 function koState(){
@@ -453,78 +418,32 @@ function generateAthleteLink(){document.getElementById("shareLink").value=locati
 function closeShareModal(){document.getElementById("shareModal").classList.remove("open")}
 async function copyShareLink(){await navigator.clipboard.writeText(document.getElementById("shareLink").value);alert("Link copiado!")}
 
+
 function printRanking(){preparePrint("ranking");window.print()}
 function printYear(){preparePrint("year");window.print()}
 function printKnockout(){preparePrint("ko");window.print()}
-
-function storyPhotoHtml(a){
-  return a.photo
-    ? `<img class="print-photo" src="${a.photo}" onclick="openPhotoView('${a.photo}')">`
-    : `<span class="print-photo-placeholder">${initials(a.name)}</span>`;
+function storyPhotoHtml(a){return a.photo?`<img class="print-photo" src="${a.photo}" onclick="openPhotoView('${a.photo}')">`:`<span class="print-photo-placeholder">${initials(a.name)}</span>`}
+function storyRows(list,totalField){
+  const count=list.length,rowClass=count>28?"many-rows":count>22?"medium-rows":"normal-rows";
+  return `<table class="print-ranking-table ${rowClass}"><tr><th>POS</th><th>FOTO</th><th>ATLETA</th><th>PTS</th></tr>`+list.map((a,i)=>`<tr><td>${i+1}</td><td>${storyPhotoHtml(a)}</td><td>${esc(a.name)}</td><td>${a[totalField]}</td></tr>`).join("")+`</table>`;
 }
-
 function preparePrint(type){
   let title=type==="year"?"TOTAL GERAL DO ANO":type==="ko"?"CHAVEAMENTO MATA-MATA":"CLASSIFICAÇÃO - MÊS: "+month();
-
-  let html=`<div class="print-card story-print" id="storyCard">
-    <div class="print-title compact-print-title">
-      <div class="print-logo"><img src="logo-primo-soccer.png"></div>
-      <div>
-        <h2>PRIMO SOCCER LEAGUE</h2>
-        <h1>${title}</h1>
-      </div>
-    </div>`;
-
-  if(type==="year"){
-    html+=`<table class="print-ranking-table"><tr><th>POS</th><th>FOTO</th><th>ATLETA</th><th>TOTAL</th></tr>`+
-    rankedYear().slice(0,32).map((a,i)=>`<tr><td>${i+1}</td><td>${storyPhotoHtml(a)}</td><td>${esc(a.name)}</td><td>${a.year}</td></tr>`).join("")+`</table>`;
-  }else if(type==="ko"){
-    html+=`<div class="story-ko">${document.getElementById("knockoutContent")?.innerHTML||"<p>Sem chaveamento.</p>"}</div>`;
-  }else{
-    html+=`<table class="print-ranking-table"><tr><th>POS</th><th>FOTO</th><th>ATLETA</th><th>PONTOS</th></tr>`+
-    ranked().slice(0,32).map((a,i)=>`<tr><td>${i+1}</td><td>${storyPhotoHtml(a)}</td><td>${esc(a.name)}</td><td>${a.total}</td></tr>`).join("")+`</table>`;
-  }
-
-  html+=`</div>`;
-  document.getElementById("printContent").innerHTML=html;
+  let html=`<div class="print-card story-print" id="storyCard"><div class="print-title compact-print-title"><div class="print-logo"><img src="logo-primo-soccer.png"></div><div><h2>PRIMO SOCCER LEAGUE</h2><h1>${title}</h1></div></div>`;
+  if(type==="year")html+=storyRows(rankedYear(),"year");else if(type==="ko")html+=`<div class="story-ko">${document.getElementById("knockoutContent")?.innerHTML||"<p>Sem chaveamento.</p>"}</div>`;else html+=storyRows(ranked(),"total");
+  html+=`</div>`;document.getElementById("printContent").innerHTML=html;
 }
-
 async function saveInstagramStory(type){
-  preparePrint(type);
-  const card=document.getElementById("storyCard");
-  if(!card){alert("Não foi possível gerar a arte.");return;}
-
-  document.body.classList.add("exporting-story");
+  preparePrint(type);const card=document.getElementById("storyCard"),area=document.getElementById("storyExportArea")||document.querySelector(".print-area");
+  if(!card){alert("Não foi possível gerar a arte.");return}
+  document.body.classList.add("exporting-story");if(area)area.style.display="flex";
   try{
-    await new Promise(r=>setTimeout(r,300));
-    const canvas=await html2canvas(card,{
-      backgroundColor:null,
-      scale:2,
-      useCORS:true,
-      allowTaint:true,
-      width:1080,
-      height:1920,
-      windowWidth:1080,
-      windowHeight:1920
-    });
-
-    const finalCanvas=document.createElement("canvas");
-    finalCanvas.width=1080;
-    finalCanvas.height=1920;
-    const ctx=finalCanvas.getContext("2d");
-    ctx.drawImage(canvas,0,0,1080,1920);
-
-    const link=document.createElement("a");
-    const label=type==="year"?"anual":type==="ko"?"mata-mata":"ranking";
-    link.download=`primo-soccer-league-${label}-${month().toLowerCase()}.png`;
-    link.href=finalCanvas.toDataURL("image/png");
-    link.click();
-  }catch(e){
-    console.error(e);
-    alert("Erro ao salvar a imagem. Tente novamente.");
-  }finally{
-    document.body.classList.remove("exporting-story");
-  }
+    await new Promise(r=>setTimeout(r,500));
+    if(typeof html2canvas==="undefined"){alert("Biblioteca de imagem ainda não carregou. Atualize a página e tente novamente.");return}
+    const canvas=await html2canvas(card,{backgroundColor:"#020817",scale:1,useCORS:true,allowTaint:true,width:1080,height:1920,windowWidth:1080,windowHeight:1920,scrollX:0,scrollY:0});
+    const link=document.createElement("a"),label=type==="year"?"anual":type==="ko"?"mata-mata":"ranking";
+    link.download=`primo-soccer-league-${label}-${month().toLowerCase()}.png`;link.href=canvas.toDataURL("image/png");document.body.appendChild(link);link.click();link.remove();
+  }catch(e){console.error(e);alert("Erro ao salvar a imagem. Tente novamente.")}finally{document.body.classList.remove("exporting-story");if(area)area.style.display=""}
 }
 
 function exportCSV(){const rows=[["Atleta","ID","Mês","Total Mês","Total Ano"],...ranked().map(a=>[a.name,idOf(a),month(),a.total,yearTotal(a)])];download("\\uFEFF"+rows.map(r=>r.map(c=>`"${String(c).replaceAll('"','""')}"`).join(";")).join("\\n"),"ranking.csv","text/csv")}
@@ -655,3 +574,5 @@ function forceSetMonth(m){
   scheduleSave();
   renderAll();
 }
+
+async function limparAppCache(){try{if("serviceWorker" in navigator){const regs=await navigator.serviceWorker.getRegistrations();for(const r of regs)await r.unregister()}if(window.caches){const keys=await caches.keys();for(const k of keys)await caches.delete(k)}alert("Cache limpo. O app será recarregado.");location.reload(true)}catch(e){alert("Não foi possível limpar tudo. Atualize a página manualmente.")}}

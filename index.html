@@ -99,9 +99,9 @@
     </div>
   </div>
 </section>
-<section id="pageConfig" class="page hidden"><div class="card"><h2>Configurações</h2><button onclick="forceSync()" class="success">Sincronizar agora</button><button onclick="reloadOnline()" class="secondary">Recarregar online</button><p>v4.0 • Fotos + Story + Agenda corrigida</p></div></section>
+<section id="pageConfig" class="page hidden"><div class="card"><h2>Configurações</h2><button onclick="forceSync()" class="success">Sincronizar agora</button><button onclick="reloadOnline()" class="secondary">Recarregar online</button><button onclick="limparAppCache()" class="danger">Limpar cache do app</button><p>v4.1 • Foto ajustável + Story completo</p></div></section>
 
-<section class="print-area"><div id="printContent"></div></section>
+<section class="print-area" id="storyExportArea"><div id="printContent"></div></section>
 </main>
 <div id="statsModal" class="modal no-print"><div class="modal-card"><button onclick="closeStats()" class="modal-close">×</button><div id="statsContent"></div></div></div>
 <div id="shareModal" class="modal no-print"><div class="modal-card"><h2>Link dos atletas</h2><textarea id="shareLink" readonly></textarea><div class="modal-actions"><button onclick="copyShareLink()" class="success">Copiar</button><button onclick="closeShareModal()" class="danger">Fechar</button></div></div></div>
