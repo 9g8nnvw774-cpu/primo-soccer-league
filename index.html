@@ -11,7 +11,7 @@
 <body>
 <main class="app">
 <header class="hero no-student">
-  <div class="brand"><div class="logo"><img src="logo-primo-soccer.png" alt="Primo Soccer"></div><div><p>PRIMO SOCCER LEAGUE 2026</p><h1>MÊS: <span id="heroMonth">MAIO</span></h1></div></div>
+  <div class="brand"><div class="logo"><img src="logo-primo-soccer.png" alt="Primo Soccer"></div><div><p>PRIMO SOCCER LEAGUE 2026</p><h1>ETAPA: <span id="heroMonth">MAIO</span></h1></div></div>
   <div class="month-control"><span>MÊS</span><select id="monthName"></select></div>
 </header>
 
@@ -85,27 +85,13 @@
 <div id="knockoutContent" class="bracket-wrap"></div>
 </section>
 <section id="pageYear" class="page hidden"><div class="card"><div class="section-title-logo"><img src="logo-primo-soccer.png" class="logo-small"><h2>Total Geral do Ano</h2></div><div class="table-wrap"><table class="league-table annual-table"><thead><tr><th>POS</th><th>ATLETA</th><th>JAN</th><th>FEV</th><th>MAR</th><th>ABR</th><th>MAI</th><th>JUN</th><th>JUL</th><th>AGO</th><th>SET</th><th>OUT</th><th>NOV</th><th>DEZ</th><th>TOTAL</th></tr></thead><tbody id="yearBody"></tbody></table></div></div></section>
-<section id="pagePrint" class="page hidden">
-  <div class="card">
-    <h2>Impressões e imagens para Instagram</h2>
-    <div class="print-actions">
-      <button onclick="printRanking()" class="print-btn">Imprimir Pontuação</button>
-      <button onclick="printYear()" class="print-btn">Imprimir Total Anual</button>
-      <button onclick="printKnockout()" class="print-btn">Imprimir Mata-Mata</button>
-      <button onclick="saveInstagramStory('ranking')" class="story-btn">Salvar Ranking 1080x1920</button>
-      <button onclick="saveInstagramStory('year')" class="story-btn">Salvar Anual 1080x1920</button>
-      <button onclick="saveInstagramStory('ko')" class="story-btn">Salvar Mata-Mata 1080x1920</button>
-      <button onclick="generateAthleteLink()" class="share-btn">Link atletas</button>
-    </div>
-  </div>
-</section>
+<section id="pagePrint" class="page hidden"><div class="card"><h2>Impressões</h2><div class="print-actions"><button onclick="printRanking()" class="print-btn">Imprimir Pontuação</button><button onclick="printYear()" class="print-btn">Imprimir Total Anual</button><button onclick="printKnockout()" class="print-btn">Imprimir Mata-Mata</button><button onclick="generateAthleteLink()" class="share-btn">Link atletas</button></div></div></section>
 <section id="pageConfig" class="page hidden"><div class="card"><h2>Configurações</h2><button onclick="forceSync()" class="success">Sincronizar agora</button><button onclick="reloadOnline()" class="secondary">Recarregar online</button><p>v3.1.0</p></div></section>
 
 <section class="print-area"><div id="printContent"></div></section>
 </main>
 <div id="statsModal" class="modal no-print"><div class="modal-card"><button onclick="closeStats()" class="modal-close">×</button><div id="statsContent"></div></div></div>
 <div id="shareModal" class="modal no-print"><div class="modal-card"><h2>Link dos atletas</h2><textarea id="shareLink" readonly></textarea><div class="modal-actions"><button onclick="copyShareLink()" class="success">Copiar</button><button onclick="closeShareModal()" class="danger">Fechar</button></div></div></div>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="script.js"></script>
