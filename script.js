@@ -2,7 +2,7 @@ const SUPABASE_URL="https://edsryflpvspwtcaahvhy.supabase.co";
 const SUPABASE_KEY="sb_publishable_gtql54XF2okza9t0uZH6Yg_28oX6YNz";
 const APP_ID="primo_soccer_league_2026";
 const STORAGE_KEY="primo_league_state_v31";
-const SELECTED_MONTH_KEY="primo_league_selected_month_v1";
+const SELECTED_MONTH_KEY="primo_league_selected_month_v4";
 const MONTHS=["JANEIRO","FEVEREIRO","MARÇO","ABRIL","MAIO","JUNHO","JULHO","AGOSTO","SETEMBRO","OUTUBRO","NOVEMBRO","DEZEMBRO"];
 const slotData=[{name:"Segunda 19:30",vagas:8},{name:"Terça 11:30",vagas:6},{name:"Terça 18:30",vagas:6},{name:"Terça 19:30",vagas:8},{name:"Quarta 19:30",vagas:8},{name:"Quinta 11:30",vagas:6},{name:"Quinta 18:30",vagas:6},{name:"Quinta 19:30",vagas:8}];
 const slots=slotData.map(s=>s.name);
@@ -86,42 +86,26 @@ function renderSlotSelects(){
   }
 }
 function renderWeeks(){const el=document.getElementById("weekTabs");if(el)el.innerHTML=[0,1,2,3,4].map(i=>`<button class="${i===currentWeek?"active":""}" onclick="currentWeek=${i};renderAll()">SEMANA ${i+1}</button>`).join("")}
-function photoHtml(a){return `<label class="photo-label">${a.photo?`<img src="${a.photo}" class="avatar">`:`<span class="avatar-placeholder">${initials(a.name)}</span>`}<input class="photo-input" type="file" accept="image/*" onchange="loadPhoto(event,'${idOf(a)}')"></label>`}
-function loadPhoto(e,id){ photoUploadInProgress=true;
+function photoHtml(a){
+  const img = a.photo
+    ? `<img src="${a.photo}" class="avatar" onclick="event.preventDefault();event.stopPropagation();openPhotoView('${a.photo}')">`
+    : `<span class="avatar-placeholder">${initials(a.name)}</span>`;
+  return `<label class="photo-label">${img}<input class="photo-input" type="file" accept="image/*" onchange="loadPhoto(event,'${idOf(a)}')"></label>`;
+}
+
+let cropPhotoState=null;
+
+function loadPhoto(e,id){
+  photoUploadInProgress=true;
   const f=e.target.files && e.target.files[0];
-  if(!f)return;
+  if(!f){photoUploadInProgress=false;return;}
 
   const reader=new FileReader();
   reader.onload=()=>{
     const img=new Image();
     img.onload=()=>{
-      const maxSize=420;
-      let w=img.width, h=img.height;
-      if(w>h && w>maxSize){ h=Math.round(h*maxSize/w); w=maxSize; }
-      else if(h>=w && h>maxSize){ w=Math.round(w*maxSize/h); h=maxSize; }
-
-      const canvas=document.createElement("canvas");
-      canvas.width=w;
-      canvas.height=h;
-      const ctx=canvas.getContext("2d");
-      ctx.drawImage(img,0,0,w,h);
-
-      const compressed=canvas.toDataURL("image/jpeg",0.82);
-      const a=state.athletes.find(x=>idOf(x)===String(id));
-
-      if(a){
-        a.photo=compressed;
-        saveLocal();
-
-        clearTimeout(saveTimer);
-        saveTimer=setTimeout(async()=>{
-          await saveCloud();
-          renderAll();
-        },500);
-
-        renderAll();
-        photoUploadInProgress=false; setSync("Foto do atleta salva.", "ok");
-      }
+      cropPhotoState={id:String(id),img,zoom:1,offsetX:0,offsetY:0,dragging:false,lastX:0,lastY:0};
+      openPhotoCropModal();
     };
     img.src=reader.result;
   };
@@ -283,7 +267,12 @@ function setScoreLive(id,sl,field,val,el){
 function setScore(id,sl,field,val,el){const a=state.athletes.find(x=>idOf(x)===id);if(!a)return;const s=getScore(a,currentWeek,sl);s[field]=n(val);scheduleSave();renderScore();renderRanking();renderYear();renderKnockout();renderDashboard()}
 function clearCurrentSession(){const sl=document.getElementById("sessionSlot").value;if(!confirm("Limpar este horário?"))return;activeAthletes().forEach(a=>{const w=weeksOf(a);if(w[currentWeek]?.[sl])w[currentWeek][sl]=emptyScore()});scheduleSave();renderAll()}
 function renderAgenda(){const grid=document.getElementById("agendaGrid");if(!grid)return;grid.innerHTML=slotData.map(slot=>{const list=activeAthletes().filter(a=>slotsOf(a).includes(slot.name));return `<div class="agenda-card"><div class="agenda-head"><strong>${slot.name}</strong><span class="badge">${list.length}/${slot.vagas}</span></div><div class="agenda-list">${list.map(a=>`<div class="agenda-athlete"><span>${esc(a.name)}</span><strong>${monthTotal(a)} pts</strong></div>`).join("")||"<div>Nenhum atleta</div>"}</div></div>`}).join("")}
-function renderRanking(){const el=document.getElementById("rankingList");if(!el)return;el.innerHTML=ranked().map((a,i)=>`<div class="rank-row"><div class="rank-left"><span>${i===0?"🥇":i===1?"🥈":i===2?"🥉":"⚽"}</span><span class="rank-photo">${a.photo?`<img src="${a.photo}" class="avatar">`:`<span class="avatar-placeholder">${initials(a.name)}</span>`}</span><span>${i+1}º - ${esc(a.name)}</span></div><strong>${a.total} pts</strong></div>`).join("")||"<div>Nenhum atleta ativo.</div>"}
+function renderRanking(){
+  const el=document.getElementById("rankingList");
+  if(!el)return;
+  el.innerHTML=ranked().map((a,i)=>`<div class="rank-row"><div class="rank-left"><span>${i===0?"🥇":i===1?"🥈":i===2?"🥉":"⚽"}</span><span class="rank-photo">${a.photo?`<img src="${a.photo}" class="avatar" onclick="openPhotoView('${a.photo}')">`:`<span class="avatar-placeholder">${initials(a.name)}</span>`}</span><span>${i+1}º - ${esc(a.name)}</span></div><strong>${a.total} pts</strong></div>`).join("")||"<div>Nenhum atleta ativo.</div>";
+}
+
 function renderYear(){const body=document.getElementById("yearBody");if(!body)return;body.innerHTML=rankedYear().map((a,i)=>`<tr><td>${i+1}</td><td>${esc(a.name)}</td>${MONTHS.map(m=>`<td>${monthTotalById(idOf(a),m)||"-"}</td>`).join("")}<td><strong>${a.year}</strong></td></tr>`).join("")}
 
 function koState(){
@@ -463,8 +452,81 @@ function closeStats(){document.getElementById("statsModal").classList.remove("op
 function generateAthleteLink(){document.getElementById("shareLink").value=location.origin+location.pathname+"?aluno=1";document.getElementById("shareModal").classList.add("open")}
 function closeShareModal(){document.getElementById("shareModal").classList.remove("open")}
 async function copyShareLink(){await navigator.clipboard.writeText(document.getElementById("shareLink").value);alert("Link copiado!")}
-function printRanking(){preparePrint("ranking");window.print()}function printYear(){preparePrint("year");window.print()}function printKnockout(){preparePrint("ko");window.print()}
-function preparePrint(type){let html='<div class="print-card"><div class="print-title"><div class="print-logo"><img src="logo-primo-soccer.png"></div><div><h2>PRIMO SOCCER LEAGUE 2026</h2><h1>'+(type==="year"?"TOTAL GERAL DO ANO":type==="ko"?"CHAVEAMENTO MATA-MATA":"PONTUAÇÃO - ETAPA: "+month())+'</h1></div></div>';if(type==="year"){html+='<table><tr><th>POS</th><th>ATLETA</th><th>TOTAL</th></tr>'+rankedYear().map((a,i)=>`<tr><td>${i+1}</td><td>${esc(a.name)}</td><td>${a.year}</td></tr>`).join("")+'</table>'}else if(type==="ko"){html+=document.getElementById("knockoutContent").innerHTML}else{html+='<table><tr><th>POS</th><th>ATLETA</th><th>PTS</th></tr>'+ranked().map((a,i)=>`<tr><td>${i+1}</td><td>${esc(a.name)}</td><td>${a.total}</td></tr>`).join("")+'</table>'}html+='</div>';document.getElementById("printContent").innerHTML=html}
+
+function printRanking(){preparePrint("ranking");window.print()}
+function printYear(){preparePrint("year");window.print()}
+function printKnockout(){preparePrint("ko");window.print()}
+
+function storyPhotoHtml(a){
+  return a.photo
+    ? `<img class="print-photo" src="${a.photo}" onclick="openPhotoView('${a.photo}')">`
+    : `<span class="print-photo-placeholder">${initials(a.name)}</span>`;
+}
+
+function preparePrint(type){
+  let title=type==="year"?"TOTAL GERAL DO ANO":type==="ko"?"CHAVEAMENTO MATA-MATA":"CLASSIFICAÇÃO - MÊS: "+month();
+
+  let html=`<div class="print-card story-print" id="storyCard">
+    <div class="print-title compact-print-title">
+      <div class="print-logo"><img src="logo-primo-soccer.png"></div>
+      <div>
+        <h2>PRIMO SOCCER LEAGUE</h2>
+        <h1>${title}</h1>
+      </div>
+    </div>`;
+
+  if(type==="year"){
+    html+=`<table class="print-ranking-table"><tr><th>POS</th><th>FOTO</th><th>ATLETA</th><th>TOTAL</th></tr>`+
+    rankedYear().slice(0,32).map((a,i)=>`<tr><td>${i+1}</td><td>${storyPhotoHtml(a)}</td><td>${esc(a.name)}</td><td>${a.year}</td></tr>`).join("")+`</table>`;
+  }else if(type==="ko"){
+    html+=`<div class="story-ko">${document.getElementById("knockoutContent")?.innerHTML||"<p>Sem chaveamento.</p>"}</div>`;
+  }else{
+    html+=`<table class="print-ranking-table"><tr><th>POS</th><th>FOTO</th><th>ATLETA</th><th>PONTOS</th></tr>`+
+    ranked().slice(0,32).map((a,i)=>`<tr><td>${i+1}</td><td>${storyPhotoHtml(a)}</td><td>${esc(a.name)}</td><td>${a.total}</td></tr>`).join("")+`</table>`;
+  }
+
+  html+=`</div>`;
+  document.getElementById("printContent").innerHTML=html;
+}
+
+async function saveInstagramStory(type){
+  preparePrint(type);
+  const card=document.getElementById("storyCard");
+  if(!card){alert("Não foi possível gerar a arte.");return;}
+
+  document.body.classList.add("exporting-story");
+  try{
+    await new Promise(r=>setTimeout(r,300));
+    const canvas=await html2canvas(card,{
+      backgroundColor:null,
+      scale:2,
+      useCORS:true,
+      allowTaint:true,
+      width:1080,
+      height:1920,
+      windowWidth:1080,
+      windowHeight:1920
+    });
+
+    const finalCanvas=document.createElement("canvas");
+    finalCanvas.width=1080;
+    finalCanvas.height=1920;
+    const ctx=finalCanvas.getContext("2d");
+    ctx.drawImage(canvas,0,0,1080,1920);
+
+    const link=document.createElement("a");
+    const label=type==="year"?"anual":type==="ko"?"mata-mata":"ranking";
+    link.download=`primo-soccer-league-${label}-${month().toLowerCase()}.png`;
+    link.href=finalCanvas.toDataURL("image/png");
+    link.click();
+  }catch(e){
+    console.error(e);
+    alert("Erro ao salvar a imagem. Tente novamente.");
+  }finally{
+    document.body.classList.remove("exporting-story");
+  }
+}
+
 function exportCSV(){const rows=[["Atleta","ID","Mês","Total Mês","Total Ano"],...ranked().map(a=>[a.name,idOf(a),month(),a.total,yearTotal(a)])];download("\\uFEFF"+rows.map(r=>r.map(c=>`"${String(c).replaceAll('"','""')}"`).join(";")).join("\\n"),"ranking.csv","text/csv")}
 function download(c,nm,type){const b=new Blob([c],{type}),u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download=nm;a.click();URL.revokeObjectURL(u)}
 async function forceSync(){await saveCloud();await loadCloud()}function reloadOnline(){localStorage.removeItem(STORAGE_KEY);loadCloud()}
@@ -483,6 +545,87 @@ function deleteAthleteFull(id){
 }
 
 function setupStudent(){if(new URLSearchParams(location.search).get("aluno")==="1"){document.body.classList.add("student-mode");document.getElementById("studentBanner").classList.remove("hidden");setPage("ranking")}}
+
+/* ===== V4 Foto ampliada + ajuste/crop ===== */
+function openPhotoView(src){
+  const modal=document.getElementById("photoViewModal");
+  const img=document.getElementById("photoViewImg");
+  if(!modal||!img)return;
+  img.src=src;
+  modal.classList.add("open");
+}
+function closePhotoView(){
+  const modal=document.getElementById("photoViewModal");
+  if(modal)modal.classList.remove("open");
+}
+
+function openPhotoCropModal(){
+  const modal=document.getElementById("photoCropModal");
+  const canvas=document.getElementById("photoCropCanvas");
+  const range=document.getElementById("photoZoomRange");
+  if(!modal||!canvas||!cropPhotoState)return;
+  range.value=1;
+  const c=canvas;
+  c.onpointerdown=e=>{cropPhotoState.dragging=true;cropPhotoState.lastX=e.clientX;cropPhotoState.lastY=e.clientY;c.setPointerCapture(e.pointerId)};
+  c.onpointermove=e=>{
+    if(!cropPhotoState?.dragging)return;
+    cropPhotoState.offsetX += e.clientX-cropPhotoState.lastX;
+    cropPhotoState.offsetY += e.clientY-cropPhotoState.lastY;
+    cropPhotoState.lastX=e.clientX;
+    cropPhotoState.lastY=e.clientY;
+    drawPhotoCrop();
+  };
+  c.onpointerup=e=>{if(cropPhotoState){cropPhotoState.dragging=false;}};
+  modal.classList.add("open");
+  drawPhotoCrop();
+}
+function updatePhotoZoom(v){
+  if(!cropPhotoState)return;
+  cropPhotoState.zoom=Number(v)||1;
+  drawPhotoCrop();
+}
+function drawPhotoCrop(){
+  const canvas=document.getElementById("photoCropCanvas");
+  if(!canvas||!cropPhotoState)return;
+  const ctx=canvas.getContext("2d");
+  const img=cropPhotoState.img;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle="#020817";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  const base=Math.max(canvas.width/img.width, canvas.height/img.height);
+  const scale=base*cropPhotoState.zoom;
+  const w=img.width*scale;
+  const h=img.height*scale;
+  const x=(canvas.width-w)/2+cropPhotoState.offsetX;
+  const y=(canvas.height-h)/2+cropPhotoState.offsetY;
+  ctx.drawImage(img,x,y,w,h);
+
+  ctx.strokeStyle="#7eeaff";
+  ctx.lineWidth=5;
+  ctx.strokeRect(2.5,2.5,canvas.width-5,canvas.height-5);
+}
+function saveCroppedPhoto(){
+  if(!cropPhotoState)return;
+  const canvas=document.getElementById("photoCropCanvas");
+  const a=state.athletes.find(x=>idOf(x)===String(cropPhotoState.id));
+  if(a){
+    a.photo=canvas.toDataURL("image/jpeg",0.86);
+    saveLocal();
+    clearTimeout(saveTimer);
+    saveTimer=setTimeout(async()=>{await saveCloud();renderAll();},500);
+    setSync("Foto do atleta salva.","ok");
+  }
+  cancelPhotoCrop();
+  renderAll();
+}
+function cancelPhotoCrop(){
+  const modal=document.getElementById("photoCropModal");
+  if(modal)modal.classList.remove("open");
+  cropPhotoState=null;
+  photoUploadInProgress=false;
+}
+
 renderAll();setupStudent();initCloud();
 
 

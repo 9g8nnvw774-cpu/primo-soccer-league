@@ -229,3 +229,190 @@ body.student-mode .match {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ===== V4 Adultos: foto, story e impressão 1080x1920 ===== */
+.story-btn{
+  border:0;
+  border-radius:12px;
+  padding:14px 16px;
+  font-weight:900;
+  background:#8ff0b3;
+  color:#041029;
+}
+.photo-label .avatar,
+.rank-photo .avatar{
+  cursor:zoom-in!important;
+}
+.photo-view-modal.open,
+.photo-crop-modal.open{
+  display:flex!important;
+}
+.photo-view-card{
+  width:min(94vw,720px);
+  background:#020817;
+  border:1px solid rgba(126,234,255,.45);
+  border-radius:22px;
+  padding:18px;
+  position:relative;
+}
+#photoViewImg{
+  width:100%;
+  max-height:80vh;
+  object-fit:contain;
+  border-radius:18px;
+}
+.crop-card{
+  max-width:560px!important;
+}
+#photoCropCanvas{
+  width:100%;
+  max-width:420px;
+  aspect-ratio:1/1;
+  display:block;
+  margin:12px auto;
+  border-radius:18px;
+  touch-action:none;
+  background:#020817;
+}
+#photoZoomRange{
+  width:100%;
+}
+.print-area{
+  display:none;
+}
+.exporting-story .print-area{
+  display:flex!important;
+  position:fixed!important;
+  inset:0!important;
+  z-index:99999!important;
+  background:#020817!important;
+  align-items:flex-start!important;
+  justify-content:center!important;
+  overflow:auto!important;
+  padding:0!important;
+}
+.story-print{
+  width:1080px!important;
+  height:1920px!important;
+  min-height:1920px!important;
+  margin:0!important;
+  border-radius:0!important;
+  padding:58px 58px!important;
+  background:
+    linear-gradient(180deg,rgba(2,8,23,.02),rgba(2,8,23,.70) 42%,rgba(2,8,23,.98)),
+    url("capa-primo-soccer.jpeg") center top/cover no-repeat!important;
+  color:#fff!important;
+  overflow:hidden!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+.story-print .print-title{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:24px!important;
+  text-align:left!important;
+  margin-bottom:36px!important;
+}
+.story-print .print-logo{
+  width:190px!important;
+  height:190px!important;
+  border-radius:28px!important;
+  background:rgba(255,255,255,.92)!important;
+  display:grid!important;
+  place-items:center!important;
+  flex:0 0 auto!important;
+}
+.story-print .print-logo img{
+  width:170px!important;
+  height:170px!important;
+  object-fit:contain!important;
+}
+.story-print h2{
+  margin:0!important;
+  color:#7eeaff!important;
+  font-size:42px!important;
+  letter-spacing:2px!important;
+  font-family:"Arial Black",Impact,sans-serif!important;
+  text-shadow:0 6px 16px rgba(0,0,0,.9)!important;
+}
+.story-print h1{
+  margin:8px 0 0!important;
+  color:#fff!important;
+  font-size:58px!important;
+  line-height:1!important;
+  font-family:"Arial Black",Impact,sans-serif!important;
+  text-shadow:0 6px 16px rgba(0,0,0,.95)!important;
+}
+.story-print .print-ranking-table{
+  width:100%!important;
+  border-collapse:separate!important;
+  border-spacing:0 8px!important;
+}
+.story-print .print-ranking-table th{
+  background:rgba(2,8,23,.90)!important;
+  color:#7eeaff!important;
+  border:1px solid rgba(126,234,255,.30)!important;
+  font-size:22px!important;
+  padding:12px 10px!important;
+  text-transform:uppercase!important;
+}
+.story-print .print-ranking-table td{
+  background:rgba(2,8,23,.72)!important;
+  color:#fff!important;
+  border-top:1px solid rgba(126,234,255,.22)!important;
+  border-bottom:1px solid rgba(126,234,255,.22)!important;
+  font-size:25px!important;
+  font-weight:900!important;
+  padding:9px 10px!important;
+}
+.story-print .print-ranking-table td:first-child{
+  border-left:1px solid rgba(126,234,255,.22)!important;
+  border-radius:12px 0 0 12px!important;
+  width:80px!important;
+  text-align:center!important;
+  color:#7eeaff!important;
+}
+.story-print .print-ranking-table td:last-child{
+  border-right:1px solid rgba(126,234,255,.22)!important;
+  border-radius:0 12px 12px 0!important;
+  width:120px!important;
+  text-align:center!important;
+  color:#8ff0b3!important;
+}
+.story-print .print-photo,
+.story-print .print-photo-placeholder{
+  width:54px!important;
+  height:54px!important;
+  border-radius:50%!important;
+  border:3px solid #7eeaff!important;
+  object-fit:cover!important;
+  display:inline-grid!important;
+  place-items:center!important;
+  font-size:18px!important;
+  font-weight:900!important;
+  color:#7eeaff!important;
+  background:#061334!important;
+}
+.story-ko{
+  background:rgba(2,8,23,.72)!important;
+  border-radius:24px!important;
+  padding:22px!important;
+  border:1px solid rgba(126,234,255,.35)!important;
+}
+@media print{
+  .print-area{
+    display:flex!important;
+    position:fixed!important;
+    inset:0!important;
+    background:#020817!important;
+    padding:0!important;
+  }
+  .story-print{
+    width:1080px!important;
+    height:1920px!important;
+    min-height:1920px!important;
+    padding:58px!important;
+    border-radius:0!important;
+  }
+}
