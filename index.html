@@ -53,7 +53,10 @@
 <div class="card"><h2>Escalação do mês</h2><div class="table-wrap"><table class="league-table"><thead><tr><th>POS</th><th>FOTO</th><th>ATLETA</th><th>HORÁRIO 1</th><th>HORÁRIO 2</th><th>PTS MÊS</th><th>AÇÕES</th></tr></thead><tbody id="monthAthletesBody"></tbody></table></div></div>
 </section>
 
-<section id="pageAgenda" class="page hidden"><div class="card"><h2>Agenda do mês</h2></div><div id="agendaGrid" class="agenda-grid"></div></section>
+<section id="pageAgenda" class="page hidden">
+<div class="card"><h2>Agenda do mês</h2><p>Copie a agenda de qualquer mês sem copiar pontuação.</p>
+<div class="month-actions"><select id="copyFromMonthSelectAgenda" class="copy-month-select"></select><button onclick="copyMonthAgendaFromAgenda()" class="secondary">Copiar agenda do mês escolhido</button></div></div>
+<div id="agendaGrid" class="agenda-grid"></div></section>
 
 <section id="pageTreinos" class="page hidden">
 <div class="card"><h2>Pontuação</h2><div class="form-grid treino-grid"><select id="sessionSlot"></select><button onclick="clearCurrentSession()" class="secondary">Limpar horário</button><button onclick="exportCSV()" class="success">Exportar CSV</button></div><nav id="weekTabs" class="week-tabs"></nav></div>
@@ -99,7 +102,7 @@
     </div>
   </div>
 </section>
-<section id="pageConfig" class="page hidden"><div class="card"><h2>Configurações</h2><button onclick="forceSync()" class="success">Sincronizar agora</button><button onclick="reloadOnline()" class="secondary">Recarregar online</button><button onclick="limparAppCache()" class="danger">Limpar cache do app</button><p>v4.1 • Foto ajustável + Story completo</p></div></section>
+<section id="pageConfig" class="page hidden"><div class="card"><h2>Configurações</h2><button onclick="forceSync()" class="success">Sincronizar agora</button><button onclick="reloadOnline()" class="secondary">Recarregar online</button><button onclick="limparAppCache()" class="danger">Limpar cache do app</button><p>v4.2 • Agenda + Foto + Story completo</p></div></section>
 
 <section class="print-area" id="storyExportArea"><div id="printContent"></div></section>
 </main>
