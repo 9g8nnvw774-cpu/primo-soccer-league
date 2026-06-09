@@ -137,8 +137,58 @@ function renderAgenda(){
   }).join("");
 }
 function removeFromSchedule(id,sch){const p=participant(id,false);if(p){p.schedules=p.schedules.filter(x=>x!==sch);scheduleSave();renderAll()}}
-function renderScore(){const sch=document.getElementById("scoreSchedule").value||(SCHEDULES[activeCategory]||[])[0]||"",week=+document.getElementById("scoreWeek").value||0;document.getElementById("scoreTitle").textContent=`PRIMO SOCCER LEAGUE 2026 • ${sch} • Semana ${week+1}`;const list=activeByCategory().filter(s=>(participant(s.id,false)?.schedules||[]).includes(sch));document.getElementById("scoreTable").innerHTML=list.map((s,i)=>{const score=getScore(s.id,week,sch);return`<tr><td>${i+1}</td><td class="sticky"><div class="playerCell">${avatarHtml(s)}<strong>${esc(s.name)}</strong></div></td><td><input class="scoreInput" type="number" value="${score.pd}" oninput="setScore('${s.id}',${week},'${sch}','pd',this.value,this)"></td><td><input class="scoreInput" type="number" value="${score.pe}" oninput="setScore('${s.id}',${week},'${sch}','pe',this.value,this)"></td><td><select class="bonusSelect" onchange="setScore('${s.id}',${week},'${sch}','bonus',this.value,this)"><option value="0" ${score.bonus==0?"selected":""}>0</option><option value="5" ${score.bonus==5?"selected":""}>5</option><option value="7" ${score.bonus==7?"selected":""}>7</option></select></td><td class="totalCell"><strong>${scoreTotal(score)}</strong></td></tr>`}).join("")||`<tr><td colspan="6">Nenhum atleta neste horário. Vá em Agenda e adicione atletas neste horário.</td></tr>`}
-function setScore(id,week,sch,field,value,el){const sc=getScore(id,week,sch);sc[field]=+value||0;const row=el.closest("tr");if(row)row.querySelector(".totalCell strong").textContent=scoreTotal(sc);scheduleSave();renderRankings()}
+function quickScoreControl(id,week,sch,field,value,label){
+  return `<div class="quickScore" aria-label="${label}">
+    <button type="button" class="scoreBtn minus" onclick="adjustScore('${id}',${week},'${sch}','${field}',-1,this)">−</button>
+    <button type="button" class="scoreValue" onclick="adjustScore('${id}',${week},'${sch}','${field}',1,this)" title="Clique para somar +1">${value}</button>
+    <button type="button" class="scoreBtn plus" onclick="adjustScore('${id}',${week},'${sch}','${field}',1,this)">+</button>
+  </div>`;
+}
+function renderScore(){
+  const sch=document.getElementById("scoreSchedule").value||(SCHEDULES[activeCategory]||[])[0]||"",week=+document.getElementById("scoreWeek").value||0;
+  document.getElementById("scoreTitle").textContent=`PRIMO SOCCER LEAGUE 2026 • ${sch} • Semana ${week+1}`;
+  const list=activeByCategory().filter(s=>(participant(s.id,false)?.schedules||[]).includes(sch));
+  document.getElementById("scoreTable").innerHTML=list.map((s,i)=>{
+    const score=getScore(s.id,week,sch);
+    return `<tr data-student="${s.id}">
+      <td>${i+1}</td>
+      <td class="sticky"><div class="playerCell quickPlayer" onclick="adjustScore('${s.id}',${week},'${sch}','pd',1,this)" title="Clique no atleta para somar +1 no pé direito">${avatarHtml(s)}<strong>${esc(s.name)}</strong></div></td>
+      <td>${quickScoreControl(s.id,week,sch,'pd',score.pd,'Pé direito')}</td>
+      <td>${quickScoreControl(s.id,week,sch,'pe',score.pe,'Pé esquerdo')}</td>
+      <td><select class="bonusSelect" onchange="setScore('${s.id}',${week},'${sch}','bonus',this.value,this)"><option value="0" ${score.bonus==0?"selected":""}>0</option><option value="5" ${score.bonus==5?"selected":""}>5</option><option value="7" ${score.bonus==7?"selected":""}>7</option></select></td>
+      <td class="totalCell"><strong>${scoreTotal(score)}</strong></td>
+    </tr>`
+  }).join("")||`<tr><td colspan="6">Nenhum atleta neste horário. Vá em Agenda e adicione atletas neste horário.</td></tr>`;
+}
+function updateScoreRow(el,sc,field){
+  const row=el.closest("tr");
+  if(!row)return;
+  const cells=row.querySelectorAll("td");
+  const fieldCell=field==="pd"?cells[2]:field==="pe"?cells[3]:null;
+  if(fieldCell){
+    const valueBtn=fieldCell.querySelector(".scoreValue");
+    if(valueBtn)valueBtn.textContent=sc[field];
+    fieldCell.classList.remove("scoreFlash");
+    void fieldCell.offsetWidth;
+    fieldCell.classList.add("scoreFlash");
+  }
+  const total=row.querySelector(".totalCell strong");
+  if(total)total.textContent=scoreTotal(sc);
+}
+function adjustScore(id,week,sch,field,delta,el){
+  const sc=getScore(id,week,sch);
+  sc[field]=Math.max(0,(+sc[field]||0)+delta);
+  updateScoreRow(el,sc,field);
+  scheduleSave();
+  renderRankings();
+}
+function setScore(id,week,sch,field,value,el){
+  const sc=getScore(id,week,sch);
+  sc[field]=+value||0;
+  const row=el.closest("tr");
+  if(row)row.querySelector(".totalCell strong").textContent=scoreTotal(sc);
+  scheduleSave();renderRankings();
+}
 function clearTrainingScore(){const sch=document.getElementById("scoreSchedule").value,week=+document.getElementById("scoreWeek").value;if(!confirm("Limpar pontuação deste treino?"))return;activeByCategory().forEach(s=>{const p=participant(s.id,false);if(p?.weeks?.[week]?.[sch])p.weeks[week][sch]=emptyScore()});scheduleSave();renderAll()}
 function rankRow(s,i){return`<div class="rankRow"><div class="rankLeft"><span>${i===0?"🥇":i===1?"🥈":i===2?"🥉":"⚽"}</span>${avatarHtml(s)}<span>${i+1}º - ${esc(s.name)}</span></div><strong>${s.total} pts</strong></div>`}
 function renderRankings(){
