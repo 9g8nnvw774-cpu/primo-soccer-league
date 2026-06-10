@@ -419,3 +419,156 @@ preparePrint = function(type){
 };
 
 renderAll();showPage("dashboard");initCloud();setTimeout(()=>{ if(typeof initParentModeIfNeeded==="function") initParentModeIfNeeded(); applyDashboardCover(); },700);
+
+/* ===== AJUSTES SOLICITADOS JOÃO - FOTO, ORDEM ALFABÉTICA, ANUAL POR MÊS E EDIÇÃO MANUAL ===== */
+const MONTH_LABELS_SHORT = ["Jan","Fev","Mar","Abril","Maio","Jun","Jul","Agosto","Setembro","Out","Nov","Dez"];
+function sortByName(list){
+  return [...list].sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"pt-BR",{sensitivity:"base"}));
+}
+function monthlyPointsForStudent(id){
+  return MONTHS.map(m=>totalStudent(id,m));
+}
+function annualRows(cat="Adulto"){
+  return state.students
+    .filter(s=>s.active!==false && (!cat || s.category===cat))
+    .map(s=>{const months=monthlyPointsForStudent(s.id);return {...s,months,total:months.reduce((a,b)=>a+b,0)}})
+    .sort((a,b)=>b.total-a.total || String(a.name||"").localeCompare(String(b.name||""),"pt-BR",{sensitivity:"base"}));
+}
+function annualTableHtml(cat="Adulto"){
+  const rows = annualRows(cat);
+  if(!rows.length) return "<p>Nenhum atleta cadastrado.</p>";
+  return `<div class="annualTableWrap"><table class="annualTable"><thead><tr><th>#</th><th>Atleta</th>${MONTH_LABELS_SHORT.map(m=>`<th>${m}</th>`).join("")}<th>Total</th></tr></thead><tbody>${rows.map((s,i)=>`<tr><td>${i+1}</td><td class="annualName">${avatarHtml(s)}<strong>${esc(s.name)}</strong></td>${s.months.map(v=>`<td>${v||0}</td>`).join("")}<td class="annualTotal"><strong>${s.total}</strong></td></tr>`).join("")}</tbody></table></div>`;
+}
+function annualPrintTableHtml(cat="Adulto"){
+  const rows = annualRows(cat);
+  if(!rows.length) return "<p>Nenhum atleta cadastrado.</p>";
+  return `<table class="printAnnualTable"><thead><tr><th>#</th><th>Atleta</th>${MONTH_LABELS_SHORT.map(m=>`<th>${m}</th>`).join("")}<th>Total</th></tr></thead><tbody>${rows.map((s,i)=>`<tr><td>${i+1}</td><td>${esc(s.name)}</td>${s.months.map(v=>`<td>${v||0}</td>`).join("")}<td><strong>${s.total}</strong></td></tr>`).join("")}</tbody></table>`;
+}
+
+photoPickerHtml = function(s){
+  const inputId = `photoInput-${s.id}`;
+  return `<label class="avatarInputLabel" title="Clique para alterar a foto">
+    ${s.photo?`<img src="${s.photo}" onclick="event.preventDefault(); openPhoto('${s.photo}')">`:initials(s.name)}
+    <input id="${inputId}" class="photoInput" type="file" accept="image/*" onchange="loadPhoto(event,'${s.id}')">
+  </label>`;
+};
+function clickPhotoInput(id){
+  const input = document.getElementById(`photoInput-${id}`);
+  if(input) input.click();
+}
+function removePhoto(id){
+  const s = studentById(id);
+  if(!s) return;
+  if(!s.photo) return alert("Esse atleta ainda não tem foto cadastrada.");
+  if(!confirm("Excluir a foto deste atleta?")) return;
+  s.photo = "";
+  scheduleSave();
+  renderAll();
+}
+
+renderSelectors = function(){
+  const currentStudent=document.getElementById("studentPicker")?.value||"";
+  const currentSchedule=document.getElementById("schedulePicker")?.value||"";
+  const currentScoreSchedule=document.getElementById("scoreSchedule")?.value||"";
+  const currentWeek=document.getElementById("scoreWeek")?.value||"";
+  document.getElementById("studentCategory").innerHTML=CATEGORIES.map(c=>`<option value="${c[0]}">${c[0]}</option>`).join("");
+  ["agendaCategory","disputeCategory"].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.innerHTML=CATEGORIES.map(c=>`<option value="${c[0]}">${c[0]}</option>`).join("");el.value=activeCategory});
+  const sp=document.getElementById("studentPicker");
+  if(sp){sp.innerHTML=sortByName(state.students.filter(s=>s.active!==false&&s.category===activeCategory)).map(s=>`<option value="${s.id}">${esc(studentOptionLabel(s))}</option>`).join("")||`<option value="">Cadastre alunos nesta categoria</option>`;restoreSelectValue("studentPicker",currentStudent)}
+  const sch=SCHEDULES[activeCategory]||[];
+  const ap=document.getElementById("schedulePicker");if(ap){ap.innerHTML=sch.map(s=>`<option value="${s}">${s}</option>`).join("");restoreSelectValue("schedulePicker",currentSchedule)}
+  const ss=document.getElementById("scoreSchedule");if(ss){ss.innerHTML=sch.map(s=>`<option value="${s}">${s}</option>`).join("");restoreSelectValue("scoreSchedule",currentScoreSchedule)}
+  const sw=document.getElementById("scoreWeek");if(sw){sw.innerHTML=[0,1,2,3,4].map(i=>`<option value="${i}">Semana ${i+1}</option>`).join("");restoreSelectValue("scoreWeek",currentWeek)}
+  renderCopyMonthPicker();
+};
+
+renderStudents = function(){
+  const body = document.getElementById("studentsTable");
+  if(!body) return;
+  const active = sortByName(state.students.filter(s=>s.active!==false));
+  if(!active.length){body.innerHTML = `<tr><td colspan="7">Nenhum aluno cadastrado.</td></tr>`;return;}
+  let html = "";
+  CATEGORIES.forEach(cat=>{
+    const list = active.filter(s=>s.category===cat[0]);
+    if(!list.length) return;
+    html += `<tr class="categoryDivider cat-${cat[1]}"><td colspan="7">🏆 ${cat[0]} • ${list.length} atleta(s) em ordem alfabética</td></tr>`;
+    html += list.map((s,i)=>`<tr>
+      <td>${i+1}</td>
+      <td>${photoPickerHtml(s)}</td>
+      <td><input value="${esc(s.name)}" onblur="editStudent('${s.id}','name',this.value)" onchange="editStudent('${s.id}','name',this.value)"></td>
+      <td><input type="date" value="${s.birth||""}" onchange="editStudent('${s.id}','birth',this.value)"></td>
+      <td>${ageFromBirth(s.birth)} anos</td>
+      <td><select onchange="editStudent('${s.id}','category',this.value)">
+        ${CATEGORIES.map(c=>`<option value="${c[0]}" ${s.category===c[0]?"selected":""}>${c[0]}</option>`).join("")}
+      </select></td>
+      <td class="studentActions"><button class="secondary smallBtn" onclick="clickPhotoInput('${s.id}')">Alterar foto</button><button class="danger smallBtn" onclick="removePhoto('${s.id}')">Excluir foto</button><button class="danger smallBtn" onclick="deleteStudent('${s.id}')">Excluir atleta</button></td>
+    </tr>`).join("");
+  });
+  body.innerHTML = html || `<tr><td colspan="7">Nenhum aluno cadastrado.</td></tr>`;
+};
+
+renderAgenda = function(){
+  const schList=SCHEDULES[activeCategory]||[];
+  document.getElementById("agendaGrid").innerHTML=schList.map(sch=>{
+    const list=sortByName(activeByCategory().filter(s=>(participant(s.id,false)?.schedules||[]).includes(sch)));
+    return`<div class="slotCard"><div class="slotTitle"><span>${sch}</span><span class="badge">${list.length}/${SLOT_LIMITS[sch]||6}</span></div>${list.map(s=>{const count=participant(s.id,false)?.schedules?.length||0;const icon=count>=2?"🔥":count===1?"✅":"⚽";const cls=count>=2?"multiSchedule":"singleSchedule";return `<div class="item ${cls}"><span>${icon} ${esc(s.name)}</span><button class="danger" onclick="removeFromSchedule('${s.id}','${sch}')">Remover</button></div>`}).join("")||"<p>Nenhum aluno.</p>"}</div>`;
+  }).join("");
+};
+
+quickScoreControl = function(id,week,sch,field,value,label){
+  return `<div class="quickScore" aria-label="${label}">
+    <button type="button" class="scoreBtn minus" onclick="adjustScore('${id}',${week},'${sch}','${field}',-1,this)">−</button>
+    <button type="button" class="scoreValue" onclick="adjustScore('${id}',${week},'${sch}','${field}',1,this)" title="Clique para somar +1">${value}</button>
+    <button type="button" class="scoreBtn plus" onclick="adjustScore('${id}',${week},'${sch}','${field}',1,this)">+</button>
+    <button type="button" class="scoreEdit" onclick="editScoreManual('${id}',${week},'${sch}','${field}',this)" title="Editar pontuação manualmente">✎</button>
+  </div>`;
+};
+function editScoreManual(id,week,sch,field,el){
+  const sc = getScore(id,week,sch);
+  const label = field === "pd" ? "pé direito" : "pé esquerdo";
+  const val = prompt(`Digite a pontuação do ${label}:`, sc[field] ?? 0);
+  if(val === null) return;
+  const n = Math.max(0, parseInt(String(val).replace(/[^0-9]/g,""),10) || 0);
+  sc[field] = n;
+  updateScoreRow(el, sc, field);
+  scheduleSave();
+  renderRankings();
+}
+
+renderRankings = function(){
+  const categoryRanking=document.getElementById("categoryRanking");
+  if(categoryRanking){
+    const monthList=ranked(activeCategory);
+    categoryRanking.innerHTML=`<h3>🏆 Pontuação mensal • ${currentMonth}</h3>${monthList.map(rankRow).join("")||"<p>Nenhum aluno ativo nesta categoria.</p>"}<h3 class="annualTitle">📅 Pontuação anual por mês</h3>${annualTableHtml(activeCategory)}`;
+  }
+  const rg=document.getElementById("rankingGeneral");if(rg)rg.innerHTML="";
+  const all=document.getElementById("allCategoryRankings");
+  if(all){all.innerHTML=CATEGORIES.map(c=>{const monthly=ranked(c[0]);return`<div class="catCard cat-${c[1]}"><h2>${c[0]}</h2><h3>🏆 Pontuação mensal • ${currentMonth}</h3>${monthly.map(rankRow).join("")||"<p>Nenhum aluno ativo no mês.</p>"}<h3 class="annualTitle">📅 Pontuação anual por mês</h3>${annualTableHtml(c[0])}</div>`}).join("")}
+  if(typeof isParentMode === "function" && isParentMode()) renderParentMode();
+};
+
+renderParentMode = function(){
+  const m=document.getElementById("parentMonth");if(m)m.textContent=currentMonth;
+  const tabs=document.getElementById("parentCategoryTabs");if(tabs){tabs.innerHTML=CATEGORIES.map(c=>{const active=c[0]===parentCategory?"active":"";return `<button class="btn-${c[1]} ${active}" onclick="setParentCategory('${c[0]}')">${c[0]}</button>`}).join("")}
+  const area=document.getElementById("parentRankingArea");if(area){const monthList=ranked(parentCategory);area.innerHTML=`<div class="card"><h2 class="rankTitle"><img src="primo-logo.png" class="rankLogo"> ${parentCategory}</h2><h3>🏆 Pontuação mensal • ${currentMonth}</h3><div class="rankList">${monthList.map(rankRow).join("")||"<p>Nenhum resultado nesta categoria.</p>"}</div><h3 class="annualTitle">📅 Pontuação anual por mês</h3>${annualTableHtml(parentCategory)}</div>`}
+};
+
+preparePrint = function(type){
+  const cat="Adulto";
+  if(type==="playoffs"){
+    const po=playoffObj();
+    const top=rankedFirstTwoWeeks().slice(0,8);
+    const topHtml=top.map((s,i)=>`<div class="printRow"><span>${i+1}º</span><span class="printPhoto">${s.photo?`<img src="${s.photo}">`:initials(s.name)}</span><span>${esc(s.name)}</span><strong>${s.total} pts</strong></div>`).join("");
+    const mini=(m,label)=>`<div class="printMatch"><h3>${label}</h3>${(m.players||[]).map(id=>{const s=id?studentById(id):null;return `<p>${s?esc(s.name):'Aguardando'} ${m.winner===id?'🏆':''}</p>`}).join("")}</div>`;
+    document.getElementById("printArea").innerHTML=`<div class="printCard printOnlyCard"><img src="primo-logo.png" class="printLogo"><h1>PRIMO SOCCER LEAGUE 2026</h1><h2>MATA-MATA • ${currentMonth}</h2><h3>Top 8 até a 2ª semana</h3><div class="printTableOnly">${topHtml}</div><div class="printBracket">${(po.qf||[]).map((m,i)=>mini(m,["1º x 8º","2º x 7º","3º x 6º","4º x 5º"][i])).join("")}${(po.sf||[]).map((m,i)=>mini(m,"Semifinal "+(i+1))).join("")}${(po.final||[]).map(m=>mini(m,"Final")).join("")}</div>${po.champion?`<h2>🏆 CAMPEÃO: ${esc(studentById(po.champion)?.name||'')}</h2>`:''}</div>`;
+    return;
+  }
+  if(type==="annual"){
+    document.getElementById("printArea").innerHTML=`<div class="printCard printOnlyCard annualPrintCard"><img src="primo-logo.png" class="printLogo"><h1>PRIMO SOCCER LEAGUE 2026</h1><h2>RANKING ANUAL • ADULTO</h2>${annualPrintTableHtml(cat)}</div>`;
+    return;
+  }
+  const list=ranked(cat);
+  document.getElementById("printArea").innerHTML=`<div class="printCard printOnlyCard"><img src="primo-logo.png" class="printLogo"><h1>PRIMO SOCCER LEAGUE 2026</h1><h2>RANKING ADULTO • ${currentMonth}</h2><div class="printTableOnly">${list.map((s,i)=>`<div class="printRow"><span>${i+1}º</span><span class="printPhoto">${s.photo?`<img src="${s.photo}" onclick="openPhoto('${s.photo}')">`:initials(s.name)}</span><span>${esc(s.name)}</span><strong>${s.total} pts</strong></div>`).join("")||"<p>Nenhum atleta.</p>"}</div></div>`;
+};
+
+renderAll();

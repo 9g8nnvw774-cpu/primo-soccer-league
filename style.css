@@ -580,3 +580,21 @@ body{
 @keyframes scorePulse{0%{background:rgba(0,208,132,.38)}100%{background:transparent}}
 .scoreTable td{vertical-align:middle}
 @media(max-width:680px){.quickScore{min-width:118px;gap:5px}.scoreBtn{width:38px;height:38px;font-size:22px}.scoreValue{min-width:42px;height:38px;font-size:18px}.scoreTable th,.scoreTable td{padding:8px 6px}}
+
+/* ===== AJUSTES JOÃO: FOTO, ANUAL E EDIÇÃO MANUAL ===== */
+.studentActions{display:flex;gap:6px;flex-wrap:wrap;align-items:center;justify-content:center}
+.smallBtn{padding:8px 10px!important;border-radius:12px!important;font-size:12px!important;white-space:nowrap}
+.scoreEdit{width:34px;height:34px;border:0;border-radius:12px;background:linear-gradient(135deg,#7eeaff,#3b82f6);color:#031026;font-weight:900;cursor:pointer;box-shadow:0 8px 18px rgba(0,0,0,.22)}
+.scoreEdit:active{transform:scale(.94)}
+.annualTableWrap{width:100%;overflow:auto;border:1px solid rgba(126,234,255,.18);border-radius:18px;background:rgba(2,8,23,.35);margin-top:10px}
+.annualTable{min-width:980px;width:100%;border-collapse:separate;border-spacing:0}
+.annualTable th{position:sticky;top:0;background:#07142c;color:#7eeaff;font-size:12px;text-transform:uppercase;z-index:1}
+.annualTable th,.annualTable td{padding:10px 8px;border-bottom:1px solid rgba(255,255,255,.08);text-align:center;white-space:nowrap}
+.annualTable .annualName{position:sticky;left:0;background:#061126;text-align:left;z-index:2;display:flex;align-items:center;gap:8px;min-width:190px}
+.annualTable .annualTotal{background:rgba(126,234,255,.10);color:#fff;font-size:16px}
+.printAnnualTable{width:100%;border-collapse:collapse;font-size:11px;margin-top:14px;background:#fff;color:#07142c}
+.printAnnualTable th,.printAnnualTable td{border:1px solid #cbd5e1;padding:5px 4px;text-align:center}
+.printAnnualTable th{background:#07142c;color:#fff;font-size:10px}
+.printAnnualTable td:nth-child(2){text-align:left;font-weight:800;min-width:120px}
+.annualPrintCard{padding:24px!important}
+@media(max-width:680px){.studentActions{flex-direction:column}.smallBtn{width:100%}.quickScore{min-width:158px;gap:4px}.scoreEdit{width:32px;height:32px}.annualTable th,.annualTable td{padding:8px 6px;font-size:12px}.annualTable .annualName{min-width:160px}}
