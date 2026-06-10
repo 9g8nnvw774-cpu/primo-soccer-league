@@ -572,3 +572,143 @@ preparePrint = function(type){
 };
 
 renderAll();
+
+
+/* ===== AJUSTES JOÃO - ID FIXO, FILTRO DE TREINO E FINALIZAR TREINO ===== */
+function normalizeIdText(id){return String(id||"").toUpperCase().replace(/[^A-Z0-9-]/g,"");}
+function ensureStudentIds(){
+  if(!state || !Array.isArray(state.students)) return;
+  const used=new Set();
+  state.students.forEach((s,idx)=>{
+    if(!s.id) s.id=uid();
+    s.id=normalizeIdText(s.id) || uid();
+    while(used.has(s.id)) s.id=uid();
+    used.add(s.id);
+    if(!s.createdAt) s.createdAt=new Date().toISOString();
+  });
+}
+const normBeforeIds = norm;
+norm = function(){
+  normBeforeIds();
+  ensureStudentIds();
+  if(!state.months[currentMonth].finishedTrainings) state.months[currentMonth].finishedTrainings={};
+  state.schemaVersion=4;
+};
+function trainingKey(week,sch){return `semana-${(+week||0)+1}__${String(sch||"")}`;}
+function isTrainingFinished(week,sch){return !!monthObj().finishedTrainings?.[trainingKey(week,sch)];}
+function trainingFinishedInfo(week,sch){return monthObj().finishedTrainings?.[trainingKey(week,sch)]||null;}
+function copyAthleteId(id){
+  const txt=String(id||"");
+  if(navigator.clipboard){navigator.clipboard.writeText(txt).then(()=>alert("ID do atleta copiado: "+txt)).catch(()=>alert(txt));}
+  else alert(txt);
+}
+function shortAthleteId(id){
+  const t=String(id||"");
+  return t.length>18 ? t.slice(0,10)+"…"+t.slice(-5) : t;
+}
+
+renderSelectors = function(){
+  const currentStudent=document.getElementById("studentPicker")?.value||"";
+  const currentSchedule=document.getElementById("schedulePicker")?.value||"";
+  const currentScoreSchedule=document.getElementById("scoreSchedule")?.value||"";
+  const currentWeek=document.getElementById("scoreWeek")?.value||"";
+  document.getElementById("studentCategory").innerHTML=CATEGORIES.map(c=>`<option value="${c[0]}">${c[0]}</option>`).join("");
+  ["agendaCategory","disputeCategory"].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.innerHTML=CATEGORIES.map(c=>`<option value="${c[0]}">${c[0]}</option>`).join("");el.value=activeCategory});
+  const sp=document.getElementById("studentPicker");
+  if(sp){sp.innerHTML=sortByName(state.students.filter(s=>s.active!==false&&s.category===activeCategory)).map(s=>`<option value="${s.id}">${esc(studentOptionLabel(s))}</option>`).join("")||`<option value="">Cadastre alunos nesta categoria</option>`;restoreSelectValue("studentPicker",currentStudent)}
+  const sch=SCHEDULES[activeCategory]||[];
+  const ap=document.getElementById("schedulePicker");if(ap){ap.innerHTML=sch.map(s=>`<option value="${s}">${s}</option>`).join("");restoreSelectValue("schedulePicker",currentSchedule)}
+  const ss=document.getElementById("scoreSchedule");if(ss){ss.innerHTML=sch.map(s=>`<option value="${s}">${s}</option>`).join("");restoreSelectValue("scoreSchedule",currentScoreSchedule);ss.onchange=()=>renderScore();}
+  const sw=document.getElementById("scoreWeek");if(sw){sw.innerHTML=[0,1,2,3,4].map(i=>`<option value="${i}">Semana ${i+1}</option>`).join("");restoreSelectValue("scoreWeek",currentWeek);sw.onchange=()=>renderScore();}
+  renderCopyMonthPicker();
+};
+
+renderStudents = function(){
+  const body = document.getElementById("studentsTable");
+  if(!body) return;
+  norm();
+  const active = sortByName(state.students.filter(s=>s.active!==false));
+  if(!active.length){body.innerHTML = `<tr><td colspan="8">Nenhum atleta cadastrado.</td></tr>`;return;}
+  let html = "";
+  CATEGORIES.forEach(cat=>{
+    const list = active.filter(s=>s.category===cat[0]);
+    if(!list.length) return;
+    html += `<tr class="categoryDivider cat-${cat[1]}"><td colspan="8">🏆 ${cat[0]} • ${list.length} atleta(s) em ordem alfabética</td></tr>`;
+    html += list.map((s,i)=>`<tr>
+      <td>${i+1}</td>
+      <td><button class="idBadge" title="Clique para copiar o ID" onclick="copyAthleteId('${s.id}')">${esc(shortAthleteId(s.id))}</button></td>
+      <td>${photoPickerHtml(s)}</td>
+      <td><input value="${esc(s.name)}" onblur="editStudent('${s.id}','name',this.value)" onchange="editStudent('${s.id}','name',this.value)"></td>
+      <td><input type="date" value="${s.birth||""}" onchange="editStudent('${s.id}','birth',this.value)"></td>
+      <td>${ageFromBirth(s.birth)} anos</td>
+      <td><select onchange="editStudent('${s.id}','category',this.value)">
+        ${CATEGORIES.map(c=>`<option value="${c[0]}" ${s.category===c[0]?"selected":""}>${c[0]}</option>`).join("")}
+      </select></td>
+      <td class="studentActions"><button class="secondary smallBtn" onclick="clickPhotoInput('${s.id}')">Alterar foto</button><button class="danger smallBtn" onclick="removePhoto('${s.id}')">Excluir foto</button><button class="danger smallBtn" onclick="deleteStudent('${s.id}')">Excluir atleta</button></td>
+    </tr>`).join("");
+  });
+  body.innerHTML = html || `<tr><td colspan="8">Nenhum atleta cadastrado.</td></tr>`;
+};
+
+function scoreStatusHtml(week,sch){
+  const info=trainingFinishedInfo(week,sch);
+  if(!info) return `<span class="trainingOpen">Treino aberto para pontuar</span>`;
+  const dt=info.finishedAt ? new Date(info.finishedAt).toLocaleString("pt-BR") : "salvo";
+  return `<span class="trainingSaved">✅ Treino finalizado e salvo • ${dt}</span>`;
+}
+
+renderScore = function(){
+  const sch=document.getElementById("scoreSchedule")?.value||(SCHEDULES[activeCategory]||[])[0]||"",week=+document.getElementById("scoreWeek")?.value||0;
+  const title=document.getElementById("scoreTitle");
+  if(title) title.innerHTML=`PRIMO SOCCER LEAGUE 2026 • ${esc(sch)} • Semana ${week+1}<br>${scoreStatusHtml(week,sch)}`;
+  const list=sortByName(activeByCategory().filter(s=>(participant(s.id,false)?.schedules||[]).includes(sch)));
+  const table=document.getElementById("scoreTable");
+  if(!table) return;
+  table.innerHTML=list.map((s,i)=>{
+    const score=getScore(s.id,week,sch);
+    return `<tr data-student="${s.id}">
+      <td>${i+1}</td>
+      <td class="sticky"><div class="playerCell quickPlayer" onclick="adjustScore('${s.id}',${week},'${sch}','pd',1,this)" title="Clique no atleta para somar +1 no pé direito">${avatarHtml(s)}<div><strong>${esc(s.name)}</strong><small class="athleteIdLine">ID: ${esc(shortAthleteId(s.id))}</small></div></div></td>
+      <td>${quickScoreControl(s.id,week,sch,'pd',score.pd,'Pé direito')}</td>
+      <td>${quickScoreControl(s.id,week,sch,'pe',score.pe,'Pé esquerdo')}</td>
+      <td><select class="bonusSelect" onchange="setScore('${s.id}',${week},'${sch}','bonus',this.value,this)"><option value="0" ${score.bonus==0?"selected":""}>0</option><option value="5" ${score.bonus==5?"selected":""}>5</option><option value="7" ${score.bonus==7?"selected":""}>7</option></select></td>
+      <td class="totalCell"><strong>${scoreTotal(score)}</strong></td>
+    </tr>`
+  }).join("")||`<tr><td colspan="6">Nenhum atleta neste horário. Vá em Agenda, selecione este dia/horário e adicione atletas. Ao trocar o dia do treino aqui, a lista atualiza automaticamente.</td></tr>`;
+};
+
+async function finishTraining(){
+  const sch=document.getElementById("scoreSchedule")?.value;
+  const week=+document.getElementById("scoreWeek")?.value||0;
+  if(!sch) return alert("Selecione o dia/horário do treino.");
+  const list=activeByCategory().filter(s=>(participant(s.id,false)?.schedules||[]).includes(sch));
+  if(!list.length) return alert("Não há atletas agendados neste treino para finalizar.");
+  const total=list.reduce((sum,s)=>sum+scoreTotal(getScore(s.id,week,sch)),0);
+  if(!confirm(`Finalizar e salvar este treino?\n\n${sch}\nSemana ${week+1}\nAtletas: ${list.length}\nPontos no treino: ${total}`)) return;
+  const mo=monthObj();
+  if(!mo.finishedTrainings) mo.finishedTrainings={};
+  mo.finishedTrainings[trainingKey(week,sch)]={
+    schedule:sch,
+    week:week+1,
+    finishedAt:new Date().toISOString(),
+    athletes:list.map(s=>({id:s.id,name:s.name,total:scoreTotal(getScore(s.id,week,sch))})),
+    total
+  };
+  saveLocal();
+  await saveCloud();
+  renderAll();
+  alert("Treino finalizado e salvo no banco online.");
+}
+
+const addStudentBeforeId = addStudent;
+addStudent = function(){
+  const name=document.getElementById("studentName").value.trim(),birth=document.getElementById("studentBirth").value,category=document.getElementById("studentCategory").value||"Adulto";
+  if(!name)return alert("Digite o nome do atleta.");
+  const newId=uid();
+  state.students.push({id:newId,name,birth,category,active:true,photo:"",createdAt:new Date().toISOString()});
+  document.getElementById("studentName").value="";document.getElementById("studentBirth").value="";
+  scheduleSave();renderAll();alert("Atleta cadastrado com ID: "+newId);
+};
+
+/* Recarrega a tela com os overrides ativos */
+renderAll();

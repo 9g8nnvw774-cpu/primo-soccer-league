@@ -598,3 +598,10 @@ body{
 .printAnnualTable td:nth-child(2){text-align:left;font-weight:800;min-width:120px}
 .annualPrintCard{padding:24px!important}
 @media(max-width:680px){.studentActions{flex-direction:column}.smallBtn{width:100%}.quickScore{min-width:158px;gap:4px}.scoreEdit{width:32px;height:32px}.annualTable th,.annualTable td{padding:8px 6px;font-size:12px}.annualTable .annualName{min-width:160px}}
+
+/* Ajustes João - ID fixo e finalizar treino */
+.idBadge{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#eaf4ff;border-radius:10px;padding:7px 9px;font-size:11px;font-weight:800;letter-spacing:.3px;white-space:nowrap}
+.athleteIdLine{display:block;font-size:10px;color:#9fb3c8;margin-top:3px;font-weight:700;letter-spacing:.2px}
+.trainingSaved{display:inline-block;margin-top:8px;padding:7px 10px;border-radius:999px;background:rgba(50,220,120,.16);color:#95ffbd;font-size:13px;border:1px solid rgba(50,220,120,.35)}
+.trainingOpen{display:inline-block;margin-top:8px;padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.08);color:#ffe59a;font-size:13px;border:1px solid rgba(255,255,255,.18)}
+.scoreControls .success{font-weight:900}

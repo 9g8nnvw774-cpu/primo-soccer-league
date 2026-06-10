@@ -60,7 +60,7 @@
     <h2>Atletas cadastrados</h2>
     <div class="tableWrap">
       <table>
-        <thead><tr><th>#</th><th>Foto</th><th>Nome</th><th>Nascimento</th><th>Idade</th><th>Categoria</th><th>Ações</th></tr></thead>
+        <thead><tr><th>#</th><th>ID</th><th>Foto</th><th>Nome</th><th>Nascimento</th><th>Idade</th><th>Categoria</th><th>Ações</th></tr></thead>
         <tbody id="studentsTable"></tbody>
       </table>
     </div>
@@ -100,6 +100,7 @@
       <select id="scoreSchedule"></select>
       <select id="scoreWeek"></select>
       <button onclick="clearTrainingScore()" class="danger">Limpar treino</button>
+      <button onclick="finishTraining()" class="success">Finalizar treino e salvar</button>
     </div>
   </div>
   <div class="card">
