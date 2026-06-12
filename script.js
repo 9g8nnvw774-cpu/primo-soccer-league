@@ -712,3 +712,120 @@ addStudent = function(){
 
 /* Recarrega a tela com os overrides ativos */
 renderAll();
+
+/* ===== AJUSTES JOÃO - TELA CHEIA DA DISPUTA + CHAVEAMENTO STORY 1080x1920 ===== */
+let scoreFullscreenActive=false;
+function toggleScoreFullscreen(){
+  scoreFullscreenActive=!scoreFullscreenActive;
+  document.body.classList.toggle('scoreFullscreenMode',scoreFullscreenActive);
+  const btn=document.getElementById('scoreFullscreenBtn');
+  if(btn) btn.textContent=scoreFullscreenActive?'Sair da tela aumentada':'Aumentar tela da disputa';
+  setTimeout(()=>document.querySelector('#page-disputa .scoreTable')?.scrollIntoView({behavior:'smooth',block:'start'}),50);
+}
+function enhanceJoaoInterface(){
+  const configBtn=[...document.querySelectorAll('button')].find(b=>/Copiar link dos pais/i.test(b.textContent||''));
+  if(configBtn) configBtn.textContent='Copiar link dos atletas';
+  const parentHeader=document.querySelector('#page-pais .parentHeader p');
+  if(parentHeader) parentHeader.innerHTML='Link dos atletas • Ranking Adulto — MÊS: <strong id="parentMonth">'+esc(currentMonth)+'</strong>';
+  const controls=document.querySelector('#page-disputa .scoreControls');
+  if(controls && !document.getElementById('scoreFullscreenBtn')){
+    const b=document.createElement('button');
+    b.id='scoreFullscreenBtn';
+    b.className='secondary';
+    b.type='button';
+    b.textContent='Aumentar tela da disputa';
+    b.onclick=toggleScoreFullscreen;
+    controls.appendChild(b);
+  }
+  const playoffControls=document.querySelector('#page-matamata .agendaForm');
+  if(playoffControls && !document.getElementById('storyBracketButtons')){
+    const wrap=document.createElement('div');
+    wrap.id='storyBracketButtons';
+    wrap.className='storyBracketButtons';
+    wrap.innerHTML=`<button type="button" class="secondary" onclick="prepareBracketStory('quartas')">Story QUARTAS DE FINAL</button><button type="button" class="secondary" onclick="prepareBracketStory('semi')">Story SEMI DE FINAIS</button><button type="button" class="success" onclick="prepareBracketStory('final')">Story GRANDE FINAL</button>`;
+    playoffControls.parentElement.appendChild(wrap);
+  }
+  const printPage=document.querySelector('#page-imprimir .card.noPrint');
+  if(printPage && !document.getElementById('printStoryBracketButtons')){
+    const wrap=document.createElement('div');
+    wrap.id='printStoryBracketButtons';
+    wrap.className='storyBracketButtons';
+    wrap.innerHTML=`<button type="button" class="secondary" onclick="prepareBracketStory('quartas')">Quartas 1080x1920</button><button type="button" class="secondary" onclick="prepareBracketStory('semi')">Semi 1080x1920</button><button type="button" class="success" onclick="prepareBracketStory('final')">Final 1080x1920</button>`;
+    printPage.appendChild(wrap);
+  }
+}
+
+copyParentLink = function(){
+  const url = location.origin + location.pathname + "?pais=1";
+  const el = document.getElementById("parentLinkText");
+  if(el) el.textContent = url;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(url).then(()=>alert("Link dos atletas copiado!")).catch(()=>alert(url));
+  } else alert(url);
+};
+
+function matchIdsByStage(stage){
+  const po=playoffObj();
+  if(stage==='quartas') return (po.qf||[]).map(m=>m.players||[null,null]);
+  if(stage==='semi') return (po.sf||[]).map(m=>m.players||[null,null]);
+  return (po.final||[]).map(m=>m.players||[null,null]);
+}
+function storyTitleByStage(stage){
+  if(stage==='quartas') return 'QUARTAS DE FINAL';
+  if(stage==='semi') return 'SEMI DE FINAIS';
+  return 'GRANDE FINAL';
+}
+function storySubByStage(stage){
+  if(stage==='quartas') return '3ª SEMANA • TOP 8 DA CLASSIFICAÇÃO';
+  if(stage==='semi') return '4ª SEMANA • VALENDO VAGA NA FINAL';
+  return '5ª SEMANA • A GRANDE DECISÃO';
+}
+function athleteStoryBox(id,seed){
+  const s=id?studentById(id):null;
+  return `<div class="storyTeamBox">
+    <div class="storySeed">${seed||''}</div>
+    <div class="storyPhoto">${s?(s.photo?`<img src="${s.photo}">`:initials(s.name)):'?'}</div>
+    <div class="storyName">${s?esc(s.name):'AGUARDANDO'}</div>
+  </div>`;
+}
+function prepareBracketStory(stage='quartas'){
+  const po=playoffObj();
+  if(stage==='quartas' && (!po.qf || !po.qf.length)){
+    alert('Primeiro clique em Gerar quartas com top 8.');
+    return;
+  }
+  const title=storyTitleByStage(stage);
+  const sub=storySubByStage(stage);
+  const matches=matchIdsByStage(stage);
+  const seeds=stage==='quartas' ? [['1º','8º'],['2º','7º'],['3º','6º'],['4º','5º']] : stage==='semi' ? [['V1','V2'],['V3','V4']] : [['F1','F2']];
+  const left=[],right=[];
+  matches.forEach((m,i)=>{
+    const block=`<div class="storyPair">${athleteStoryBox(m?.[0],seeds[i]?.[0])}${athleteStoryBox(m?.[1],seeds[i]?.[1])}</div>`;
+    (i%2===0?left:right).push(block);
+  });
+  document.getElementById('printArea').innerHTML=`
+    <div class="storyBracketCard ${stage}">
+      <div class="storyGlow gold"></div><div class="storyGlow cyan"></div>
+      <img src="primo-logo.png" class="storyLogo">
+      <div class="storyLeague">PRIMO SOCCER LEAGUE 2026</div>
+      <h1>${title}</h1>
+      <div class="storyBrush">${stage==='final'?'FINAL':stage==='semi'?'SEMIS':'FINAL'}</div>
+      <div class="storySub">${sub}</div>
+      <div class="storyBracketLayout">
+        <div class="storySide leftSide">${left.join('')||'<div></div>'}</div>
+        <div class="storyCenter">
+          <div class="connectorBox"></div>
+          <div class="storyFinalLabel">${stage==='final'?'CAMPEÃO':'FINAL'}</div>
+          <div class="storyTrophy">🏆</div>
+        </div>
+        <div class="storySide rightSide">${right.join('')||'<div></div>'}</div>
+      </div>
+      <div class="storyFooter">${esc(currentMonth)} • Salvar/Imprimir em 1080x1920</div>
+    </div>`;
+  showPage('imprimir');
+  document.getElementById('printArea')?.scrollIntoView({behavior:'smooth'});
+}
+
+const renderAllBeforeStoryPatch=renderAll;
+renderAll=function(){renderAllBeforeStoryPatch();enhanceJoaoInterface();};
+renderAll();
