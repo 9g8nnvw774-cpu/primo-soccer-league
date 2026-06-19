@@ -829,3 +829,122 @@ function prepareBracketStory(stage='quartas'){
 const renderAllBeforeStoryPatch=renderAll;
 renderAll=function(){renderAllBeforeStoryPatch();enhanceJoaoInterface();};
 renderAll();
+
+/* ===== PATCH LINK DOS ATLETAS - MÊS ATUALIZADO + SELETOR DE MÊS ===== */
+function normalizeMonthName(value){
+  if(!value) return null;
+  const raw=String(value).trim().toUpperCase();
+  const clean=raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  return MONTHS.find(m=>m===raw || m.normalize('NFD').replace(/[\u0300-\u036f]/g,'')===clean) || null;
+}
+function monthFromUrl(){
+  const p=new URLSearchParams(location.search);
+  return normalizeMonthName(p.get('mes') || p.get('month'));
+}
+function monthHasAnyData(month){
+  const mo=state?.months?.[month];
+  if(!mo || !mo.participants) return false;
+  return Object.values(mo.participants).some(p=>{
+    const hasSchedule=Array.isArray(p.schedules) && p.schedules.length>0;
+    const hasPoints=(p.weeks||[]).some(w=>Object.values(w||{}).some(sc=>scoreTotal(sc)>0));
+    return hasSchedule || hasPoints;
+  });
+}
+function latestMonthWithData(){
+  for(let i=MONTHS.length-1;i>=0;i--){
+    if(monthHasAnyData(MONTHS[i])) return MONTHS[i];
+  }
+  return normalizeMonthName(state?.currentMonth) || currentMonth || 'JANEIRO';
+}
+function publicPreferredMonth(){
+  return monthFromUrl() || normalizeMonthName(state?.currentMonth) || latestMonthWithData();
+}
+function setPublicMonth(month){
+  const m=normalizeMonthName(month);
+  if(!m) return;
+  currentMonth=m;
+  if(!state.months[currentMonth]) state.months[currentMonth]={participants:{}};
+  saveLocal();
+  const url=new URL(location.href);
+  url.searchParams.set('pais','1');
+  url.searchParams.set('mes',currentMonth);
+  history.replaceState(null,'',url.toString());
+  renderAll();
+}
+
+copyParentLink = function(){
+  const url = new URL(location.origin + location.pathname);
+  url.searchParams.set('pais','1');
+  url.searchParams.set('mes', currentMonth);
+  const finalUrl=url.toString();
+  const el = document.getElementById('parentLinkText');
+  if(el) el.textContent = finalUrl;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(finalUrl).then(()=>alert('Link dos atletas copiado com o mês '+currentMonth+'!')).catch(()=>alert(finalUrl));
+  } else alert(finalUrl);
+};
+
+const initCloudBeforeMonthPatch = initCloud;
+initCloud = async function(){
+  try{
+    setSync('Conectando ao banco online...');
+    if(!window.supabase) throw new Error('Biblioteca Supabase não carregou');
+    sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+    const {data,error}=await sb.from('primo_app_state').select('data').eq('app_id',APP_ID).maybeSingle();
+    if(error) throw error;
+    if(data && data.data && Object.keys(data.data).length){
+      const adminLocalMonth=currentMonth;
+      state=data.data;
+      if(isParentMode()) currentMonth=publicPreferredMonth();
+      else currentMonth=normalizeMonthName(state.currentMonth) || adminLocalMonth || latestMonthWithData();
+      saveLocal();
+    }else{
+      await saveCloud();
+    }
+    setSync('Dados online conectados.','ok');
+    renderAll();
+  }catch(e){
+    console.error(e);
+    setSync('Erro online: confirme SQL e config.','error');
+  }
+};
+
+renderParentMode = function(){
+  if(isParentMode()){
+    const preferred=publicPreferredMonth();
+    if(preferred && preferred!==currentMonth){
+      currentMonth=preferred;
+      if(!state.months[currentMonth]) state.months[currentMonth]={participants:{}};
+    }
+  }
+  const m=document.getElementById('parentMonth');
+  if(m)m.textContent=currentMonth;
+  const tabs=document.getElementById('parentCategoryTabs');
+  if(tabs){
+    tabs.innerHTML=`<div class="publicMonthBox"><label>Selecionar mês</label><select id="publicMonthSelect" onchange="setPublicMonth(this.value)">${MONTHS.map(m=>`<option value="${m}" ${m===currentMonth?'selected':''}>${m}</option>`).join('')}</select></div>`;
+  }
+  const area=document.getElementById('parentRankingArea');
+  if(area){
+    const monthList=ranked(parentCategory);
+    area.innerHTML=`<div class="card"><h2 class="rankTitle"><img src="primo-logo.png" class="rankLogo"> PRIMO SOCCER LEAGUE 2026</h2><h3>🏆 Pontuação mensal • ${currentMonth}</h3><div class="rankList">${monthList.map(rankRow).join('')||'<p>Nenhum resultado neste mês.</p>'}</div><h3 class="annualTitle">📅 Pontuação anual por mês</h3>${annualTableHtml(parentCategory)}</div>`;
+  }
+};
+
+const renderMonthBeforePublicPatch = renderMonth;
+renderMonth = function(){
+  renderMonthBeforePublicPatch();
+  if(isParentMode()){
+    const ps=document.getElementById('publicMonthSelect');
+    if(ps) ps.value=currentMonth;
+  }
+};
+
+const initParentModeBeforeMonthPatch = initParentModeIfNeeded;
+initParentModeIfNeeded = function(){
+  if(!isParentMode()) return;
+  const m=monthFromUrl();
+  if(m) currentMonth=m;
+  document.body.classList.add('parentMode');
+  showPage('pais');
+  renderParentMode();
+};
