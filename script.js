@@ -948,3 +948,204 @@ initParentModeIfNeeded = function(){
   showPage('pais');
   renderParentMode();
 };
+
+/* ===== PATCH FINAL - MATA-MATA NEON NO APP, LINK DOS ATLETAS E STORY =====
+   Mantém o mesmo APP_ID, Supabase, IDs, fotos e pontuações existentes. */
+function totalStudentWeekOnly(id, weekIndex, m=currentMonth){
+  const p=monthObj(m).participants[id];
+  if(!p || !p.weeks || !p.weeks[weekIndex]) return 0;
+  return Object.values(p.weeks[weekIndex]||{}).reduce((sum,sc)=>sum+scoreTotal(sc),0);
+}
+function stageWeekIndex(stage){ return stage==='quartas'?2:stage==='semi'?3:4; }
+function stageRoundKey(stage){ return stage==='quartas'?'qf':stage==='semi'?'sf':'final'; }
+function stageLabelLong(stage){ return stage==='quartas'?'QUARTAS DE FINAL':stage==='semi'?'SEMI FINAIS':'GRANDE FINAL'; }
+function stageWeekLabel(stage){ return stage==='quartas'?'3ª SEMANA':stage==='semi'?'4ª SEMANA':'5ª SEMANA'; }
+function stageMatches(stage){ const po=playoffObj(); return po[stageRoundKey(stage)]||[]; }
+function stageAutoByPlayoff(){
+  const po=playoffObj();
+  if(po.champion || (po.final||[]).some(m=>(m.players||[]).filter(Boolean).length)) return 'final';
+  if((po.sf||[]).some(m=>(m.players||[]).filter(Boolean).length)) return 'semi';
+  return 'quartas';
+}
+function stageScore(id,stage){ return id ? totalStudentWeekOnly(id,stageWeekIndex(stage)) : 0; }
+function matchWinnerByWeekScore(match,stage){
+  const ids=(match?.players||[]).filter(Boolean);
+  if(ids.length<2) return null;
+  const a=stageScore(ids[0],stage), b=stageScore(ids[1],stage);
+  if(a===b) return null;
+  return a>b?ids[0]:ids[1];
+}
+function advanceByWeekScore(stage){
+  const round=stageRoundKey(stage), matches=stageMatches(stage);
+  if(!matches.length) return alert('Não há confrontos nesta fase.');
+  let missing=false, tied=false;
+  matches.forEach((m,i)=>{
+    if((m.players||[]).filter(Boolean).length<2){missing=true; return;}
+    const winner=matchWinnerByWeekScore(m,stage);
+    if(!winner){tied=true; return;}
+    setMatchWinner(round,i,winner);
+  });
+  if(missing) alert('Alguns confrontos ainda estão aguardando atletas.');
+  else if(tied) alert('Existe empate na pontuação da semana. Escolha o vencedor manualmente.');
+  else alert('Vencedores definidos pela pontuação da '+stageWeekLabel(stage)+'.');
+}
+function neonAthleteCard(id,stage,seed='',round,index){
+  const s=id?studentById(id):null;
+  const pts=s?stageScore(id,stage):0;
+  const checked=round && id && (playoffObj()[round]?.[index]?.winner===id);
+  return `<div class="neonAthleteCard ${checked?'isWinner':''}">
+    <div class="neonSeed">${seed}</div>
+    <div class="neonAvatar">${s?(s.photo?`<img src="${s.photo}">`:initials(s.name)):'?'}</div>
+    <div class="neonInfo"><strong>${s?esc(s.name):'AGUARDANDO'}</strong><span>${stageWeekLabel(stage)} • ${pts} pts</span></div>
+    ${round&&s?`<button class="winnerPick" onclick="setMatchWinner('${round}',${index},'${id}')">${checked?'✓':'Venceu'}</button>`:''}
+  </div>`;
+}
+function neonBracketHtml(stage='quartas',options={interactive:true}){
+  const matches=stageMatches(stage);
+  const title=stageLabelLong(stage), week=stageWeekLabel(stage), round=stageRoundKey(stage);
+  const seeds=stage==='quartas' ? [['1º','8º'],['2º','7º'],['3º','6º'],['4º','5º']] : stage==='semi' ? [['VQ1','VQ2'],['VQ3','VQ4']] : [['VS1','VS2']];
+  const left=[], right=[];
+  matches.forEach((m,i)=>{
+    const auto=matchWinnerByWeekScore(m,stage);
+    const block=`<div class="neonMatch">
+      <div class="neonMatchTitle">${stage==='quartas'?['1º x 8º','2º x 7º','3º x 6º','4º x 5º'][i]:(stage==='semi'?'SEMI '+(i+1):'FINAL')}</div>
+      ${neonAthleteCard(m?.players?.[0],stage,seeds[i]?.[0],options.interactive?round:null,i)}
+      <div class="versus">VS</div>
+      ${neonAthleteCard(m?.players?.[1],stage,seeds[i]?.[1],options.interactive?round:null,i)}
+      ${auto?`<div class="autoWinner">Maior pontuação: ${esc(studentById(auto)?.name||'')}</div>`:`<div class="autoWinner muted">Empate/aguardando pontuação</div>`}
+    </div>`;
+    (i%2===0?left:right).push(block);
+  });
+  const champ=playoffObj().champion?studentById(playoffObj().champion):null;
+  return `<div class="neonBracketApp ${stage}">
+    <div class="neonTop"><img src="primo-logo.png"><div><small>PRIMO SOCCER LEAGUE 2026</small><h1>${title}</h1><p>${week} • ${esc(currentMonth)} • pontuação da rodada</p></div></div>
+    <div class="neonStageActions">${options.interactive?`<button class="success" onclick="advanceByWeekScore('${stage}')">Definir vencedores pela pontuação da semana</button><button class="secondary" onclick="prepareBracketStory('${stage}')">Gerar Story 1080x1920</button>`:''}</div>
+    <div class="neonBracketGrid"><div class="neonColumn">${left.join('')||'<p>Aguardando confrontos.</p>'}</div><div class="neonCenter"><div class="neonCup">🏆</div><div class="neonLine"></div><strong>${stage==='final'?'CAMPEÃO':'AVANÇA'}</strong>${champ?`<div class="champName">${esc(champ.name)}</div>`:''}</div><div class="neonColumn">${right.join('')||''}</div></div>
+  </div>`;
+}
+renderPlayoffs = function(){
+  const el=document.getElementById('playoffArea'); if(!el) return;
+  const top=rankedFirstTwoWeeks().slice(0,8);
+  const po=playoffObj();
+  const seeded=top.map((s,i)=>`<div class="seedRow"><span>${i+1}º</span>${avatarHtml(s)}<strong>${esc(s.name)}</strong><em>${s.total} pts</em></div>`).join('')||'<p>Nenhum atleta ativo.</p>';
+  el.innerHTML=`<div class="card"><h2>Classificação até a 2ª semana</h2><p class="mutedText">Esses pontos classificam os 8 atletas para as quartas.</p>${seeded}</div>
+  ${(!po.qf||!po.qf.length)?'<div class="card"><h2>Mata-mata</h2><p>Clique em “Gerar quartas com top 8”.</p></div>':neonBracketHtml('quartas')}
+  ${(po.sf||[]).some(m=>(m.players||[]).some(Boolean))?neonBracketHtml('semi'):''}
+  ${(po.final||[]).some(m=>(m.players||[]).some(Boolean))?neonBracketHtml('final'):''}`;
+};
+function storyAthleteBoxNew(id,stage,seed){
+  const s=id?studentById(id):null; const pts=s?stageScore(id,stage):0;
+  return `<div class="storyTeamBox new"><div class="storySeed">${seed||''}</div><div class="storyPhoto">${s?(s.photo?`<img src="${s.photo}">`:initials(s.name)):'?'}</div><div class="storyName"><strong>${s?esc(s.name):'AGUARDANDO'}</strong><span>${pts} PTS NA RODADA</span></div></div>`;
+}
+prepareBracketStory = function(stage='quartas'){
+  const matches=stageMatches(stage);
+  if(!matches.length){ alert(stage==='quartas'?'Primeiro clique em Gerar quartas com top 8.':'Essa fase ainda não foi formada.'); return; }
+  const seeds=stage==='quartas' ? [['1º','8º'],['2º','7º'],['3º','6º'],['4º','5º']] : stage==='semi' ? [['VQ1','VQ2'],['VQ3','VQ4']] : [['VS1','VS2']];
+  const pairs=matches.map((m,i)=>`<div class="storyPair new"><div class="storyMatchLabel">${stage==='quartas'?['1º x 8º','2º x 7º','3º x 6º','4º x 5º'][i]:(stage==='semi'?'SEMI '+(i+1):'GRANDE FINAL')}</div>${storyAthleteBoxNew(m?.players?.[0],stage,seeds[i]?.[0])}<div class="storyVs">VS</div>${storyAthleteBoxNew(m?.players?.[1],stage,seeds[i]?.[1])}</div>`);
+  const left=pairs.filter((_,i)=>i%2===0).join(''), right=pairs.filter((_,i)=>i%2===1).join('');
+  document.getElementById('printArea').innerHTML=`<div class="storyBracketCard newModel ${stage}">
+    <div class="storyDiagonal d1"></div><div class="storyDiagonal d2"></div><img src="primo-logo.png" class="storyLogo">
+    <div class="storyLeague">PRIMO SOCCER LEAGUE 2026</div><h1>${stageLabelLong(stage)}</h1><div class="storyBrush">${stage==='final'?'FINAL':stage==='semi'?'SEMIS':'PLAYOFFS'}</div><div class="storySub">${stageWeekLabel(stage)} • ${esc(currentMonth)} • PONTUAÇÃO DA RODADA</div>
+    <div class="storyBracketLayout new"><div class="storySide leftSide">${left}</div><div class="storyCenter"><div class="connectorBox"></div><div class="storyFinalLabel">${stage==='final'?'CAMPEÃO':'AVANÇA'}</div><div class="storyTrophy">🏆</div></div><div class="storySide rightSide">${right}</div></div><div class="storyFooter">1080x1920 • LINK DOS ATLETAS</div></div>`;
+  showPage('imprimir'); document.getElementById('printArea')?.scrollIntoView({behavior:'smooth'});
+};
+renderParentMode = function(){
+  if(isParentMode()){
+    const preferred=publicPreferredMonth();
+    if(preferred && preferred!==currentMonth){ currentMonth=preferred; if(!state.months[currentMonth]) state.months[currentMonth]={participants:{}}; }
+  }
+  const m=document.getElementById('parentMonth'); if(m)m.textContent=currentMonth;
+  const tabs=document.getElementById('parentCategoryTabs');
+  if(tabs){tabs.innerHTML=`<div class="publicMonthBox"><label>Selecionar mês</label><select id="publicMonthSelect" onchange="setPublicMonth(this.value)">${MONTHS.map(m=>`<option value="${m}" ${m===currentMonth?'selected':''}>${m}</option>`).join('')}</select></div>`;}
+  const area=document.getElementById('parentRankingArea');
+  if(area){
+    const monthList=ranked(parentCategory);
+    const po=playoffObj();
+    const bracket=(po.qf&&po.qf.length)?`<h3 class="annualTitle">🔥 Mata-mata</h3>${neonBracketHtml(stageAutoByPlayoff(),{interactive:false})}`:'';
+    area.innerHTML=`<div class="card"><h2 class="rankTitle"><img src="primo-logo.png" class="rankLogo"> PRIMO SOCCER LEAGUE 2026</h2><h3>🏆 Pontuação mensal • ${currentMonth}</h3><div class="rankList">${monthList.map(rankRow).join('')||'<p>Nenhum resultado neste mês.</p>'}</div>${bracket}<h3 class="annualTitle">📅 Pontuação anual por mês</h3>${annualTableHtml(parentCategory)}</div>`;
+  }
+};
+const renderAllBeforeNeonFinal=renderAll;
+renderAll=function(){renderAllBeforeNeonFinal();renderPlayoffs();if(isParentMode())renderParentMode();};
+renderAll();
+
+/* ===== PATCH DESIGN MATA-MATA 1080x1920 - MODELO JOAO =====
+   Somente altera visual/andamento do mata-mata. Não muda APP_ID, Supabase, IDs, fotos ou pontuações. */
+function mmStageScore(id,stage){ return id ? stageScore(id,stage) : 0; }
+function mmPhotoHtml(s){ return s ? (s.photo ? `<img src="${s.photo}" alt="${esc(s.name)}">` : initials(s.name)) : '?'; }
+function mmAthleteCard(id,stage,seed='',round=null,index=0,interactive=true){
+  const s=id?studentById(id):null;
+  const pts=s?mmStageScore(id,stage):0;
+  const match=round?playoffObj()[round]?.[index]:null;
+  const winner=!!(match && match.winner===id);
+  return `<div class="mmAthlete ${winner?'winner':''} ${!s?'empty':''}">
+    <div class="mmSeed">${seed||''}</div>
+    <div class="mmPhoto">${mmPhotoHtml(s)}</div>
+    <div class="mmData"><strong>${s?esc(s.name):'A DEFINIR'}</strong><span>${s?`PONTOS: ${pts}`:'-'}</span></div>
+    ${interactive&&round&&s?`<button class="mmWinBtn" onclick="setMatchWinner('${round}',${index},'${id}')">${winner?'✓':'VENCEU'}</button>`:''}
+  </div>`;
+}
+function mmMatchHtml(match,stage,index,label,seeds,interactive=true){
+  const round=stageRoundKey(stage);
+  return `<div class="mmMatch mm-${stage}-${index}">
+    <div class="mmMatchLabel">${label}</div>
+    <div class="mmDuel">
+      ${mmAthleteCard(match?.players?.[0],stage,seeds?.[0]||'',round,index,interactive)}
+      <div class="mmX">X</div>
+      ${mmAthleteCard(match?.players?.[1],stage,seeds?.[1]||'',round,index,interactive)}
+    </div>
+  </div>`;
+}
+function mmFullBracketHtml(options={interactive:true,story:false}){
+  const po=playoffObj();
+  const qf=po.qf||[], sf=po.sf||[], fn=po.final||[];
+  const qfLabels=['QUARTAS DE FINAL #1','QUARTAS DE FINAL #2','QUARTAS DE FINAL #3','QUARTAS DE FINAL #4'];
+  const qfSeeds=[['1º','8º'],['4º','5º'],['2º','7º'],['3º','6º']];
+  const qfOrder=[0,3,1,2];
+  const qfBlocks=qfOrder.map((orig,slot)=>mmMatchHtml(qf[orig]||{players:[null,null]},'quartas',orig,qfLabels[orig],qfSeeds[slot],options.interactive)).join('');
+  const semiBlocks=[0,1].map(i=>mmMatchHtml(sf[i]||{players:[null,null]},'semi',i,`SEMI FINAL #${i+1}`,i===0?['#1','#2']:['#3','#4'],options.interactive)).join('');
+  const finalBlock=mmMatchHtml(fn[0]||{players:[null,null]},'final',0,'FINAL #1',['#1','#2'],options.interactive);
+  const champ=po.champion?studentById(po.champion):null;
+  return `<div class="megaBracket ${options.story?'storyMode':''}">
+    <div class="megaBgGlow gold"></div><div class="megaBgGlow blue"></div>
+    <header class="megaHeader">
+      <div class="megaMiniTop">🏆 PRIMO SOCCER LEAGUE 2026</div>
+      <div class="megaLogoRow"><img src="primo-logo.png" class="megaLogo"><div><h1>PRIMO SOCCER</h1><h2>MATA-MATA</h2></div><img src="primo-logo.png" class="megaLogo"></div>
+      <div class="megaTitle"><span>QUARTAS DE</span> <strong>FINAL</strong></div>
+      <p class="megaSub">Início: Semana 3 | Baseado na classificação até o final da Semana 2</p>
+    </header>
+    <div class="megaNeonLine"></div>
+    <section class="megaQuartas"><h3>QUARTAS DE FINAL</h3><div class="megaQfGrid">${qfBlocks}</div></section>
+    <section class="megaSemi"><div class="megaSectionTitle"><span>SEMI</span><strong>FINAL</strong></div><div class="megaSemiGrid">${semiBlocks}</div></section>
+    <section class="megaFinal"><div class="megaFinalTitle">FINAL</div><p>FINAL #1 • SEMI FINAL #1 x #2</p><div class="megaFinalGrid"><div>${finalBlock}</div><div class="megaCup">🏆</div></div>${champ?`<div class="megaChampion">CAMPEÃO: ${esc(champ.name)}</div>`:''}</section>
+    ${options.interactive?`<footer class="megaActions"><button class="success" onclick="generatePlayoffs()">GERAR CHAVEAMENTO<br><small>Ranking até Semana 2</small></button><button class="secondary" onclick="advanceByWeekScore(stageAutoByPlayoff())">ATUALIZAR RESULTADOS</button><button class="secondary" onclick="prepareBracketStory('all')">SALVAR STORY 1080x1920</button><button class="secondary" onclick="copyParentLink()">COMPARTILHAR<br><small>Link dos atletas</small></button></footer>`:''}
+    <div class="megaFooter">Atualizado em: ${new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+  </div>`;
+}
+renderPlayoffs = function(){
+  const el=document.getElementById('playoffArea'); if(!el) return;
+  const top=rankedFirstTwoWeeks().slice(0,8);
+  const seeded=top.map((s,i)=>`<div class="seedRow"><span>${i+1}º</span>${avatarHtml(s)}<strong>${esc(s.name)}</strong><em>${s.total} pts</em></div>`).join('')||'<p>Nenhum atleta ativo.</p>';
+  el.innerHTML=`<div class="card"><h2>Classificação até a 2ª semana</h2><p class="mutedText">Os 8 melhores entram no chaveamento: 1º x 8º, 2º x 7º, 3º x 6º e 4º x 5º.</p>${seeded}</div>${mmFullBracketHtml({interactive:true})}`;
+};
+prepareBracketStory = function(stage='all'){
+  document.getElementById('printArea').innerHTML=mmFullBracketHtml({interactive:false,story:true});
+  showPage('imprimir');
+  document.getElementById('printArea')?.scrollIntoView({behavior:'smooth'});
+};
+const renderParentModeMegaBefore = renderParentMode;
+renderParentMode = function(){
+  if(isParentMode()){
+    const preferred=publicPreferredMonth();
+    if(preferred && preferred!==currentMonth){ currentMonth=preferred; if(!state.months[currentMonth]) state.months[currentMonth]={participants:{}}; }
+  }
+  const m=document.getElementById('parentMonth'); if(m)m.textContent=currentMonth;
+  const tabs=document.getElementById('parentCategoryTabs');
+  if(tabs){tabs.innerHTML=`<div class="publicMonthBox"><label>Selecionar mês</label><select id="publicMonthSelect" onchange="setPublicMonth(this.value)">${MONTHS.map(m=>`<option value="${m}" ${m===currentMonth?'selected':''}>${m}</option>`).join('')}</select></div>`;}
+  const area=document.getElementById('parentRankingArea');
+  if(area){
+    const monthList=ranked(parentCategory);
+    area.innerHTML=`<div class="card"><h2 class="rankTitle"><img src="primo-logo.png" class="rankLogo"> PRIMO SOCCER LEAGUE 2026</h2><h3>🏆 Pontuação mensal • ${currentMonth}</h3><div class="rankList">${monthList.map(rankRow).join('')||'<p>Nenhum resultado neste mês.</p>'}</div><h3 class="annualTitle">🔥 Mata-mata</h3>${mmFullBracketHtml({interactive:false})}<h3 class="annualTitle">📅 Pontuação anual por mês</h3>${annualTableHtml(parentCategory)}</div>`;
+  }
+};
+renderAll();
